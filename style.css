@@ -4,7 +4,6 @@
     --hud-secondary: #13121a; 
     --hud-cyan: #0c85e2;      
     
-    /* Цвета обновлены под новые стандарты фракций */
     --rep-color: #91DBFF;
     --cis-color: #FCFECD;
     --neu-color: #a0a0a0;
@@ -31,11 +30,7 @@ body {
 
 #map-container:active { cursor: grabbing; }
 
-svg {
-    width: 100%;
-    height: 100%;
-    display: block;
-}
+svg { width: 100%; height: 100%; display: block; }
 
 .planet-circle { cursor: pointer; transition: r 0.1s; }
 .planet-circle:hover { r: 5; }
@@ -67,20 +62,54 @@ svg {
 .bottom-left { bottom: 20px; left: 20px; }
 .bottom-right { bottom: 20px; right: 20px; display: flex; flex-direction: column; align-items: flex-end; }
 
-/* Инструмент маршрута */
-#route-panel {
-    display: none;
+/* Отдельная кнопка маршрута */
+#btn-toggle-route {
     position: absolute;
-    bottom: 100px;
+    bottom: 135px; /* Размещаем над hud-panel bottom-right */
+    right: 20px;
+    background: var(--hud-secondary);
+    border: 1px solid var(--hud-cyan);
+    color: var(--hud-cyan);
+    padding: 10px 15px;
+    cursor: pointer;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 12px;
+    transition: 0.2s;
+    pointer-events: auto;
+    z-index: 102;
+}
+
+#btn-toggle-route:hover, #btn-toggle-route.active {
+    background: var(--hud-cyan);
+    color: var(--hud-bg);
+}
+
+/* Окно инструмента (с анимацией) */
+#route-panel {
+    position: absolute;
+    bottom: 180px; /* Размещаем над кнопкой */
     right: 20px;
     background: var(--hud-bg);
     border: 1px solid var(--hud-cyan);
-    padding: 15px;
     border-radius: 4px;
-    pointer-events: auto;
-    z-index: 100;
-    width: 220px;
+    width: 230px;
+    z-index: 101;
+    pointer-events: none; /* Чтобы клики проходили сквозь него, когда оно скрыто */
+    
+    /* Параметры анимации раскрытия */
+    transform: scaleY(0);
+    transform-origin: bottom right; /* Точка роста - низ право, около кнопки */
+    opacity: 0;
+    transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.3s ease;
 }
+
+#route-panel.open {
+    transform: scaleY(1);
+    opacity: 1;
+    pointer-events: auto; /* Включаем клики */
+}
+
+.route-panel-content { padding: 15px; }
 
 .route-header {
     color: var(--hud-cyan);
@@ -91,16 +120,12 @@ svg {
 }
 
 .route-stat {
-    font-size: 12px;
-    margin-bottom: 5px;
+    font-size: 11px;
+    margin-bottom: 6px;
     color: #ccc;
 }
 
-.route-stat span {
-    color: #fff;
-    float: right;
-    font-weight: bold;
-}
+.route-stat span { color: #fff; float: right; font-weight: bold; }
 
 #btn-reset-route {
     width: 100%;
@@ -108,17 +133,15 @@ svg {
     background: var(--hud-secondary);
     border: 1px solid #ff4444;
     color: #ff4444;
-    padding: 5px;
+    padding: 6px;
     cursor: pointer;
     font-family: 'Orbitron', sans-serif;
     transition: 0.2s;
 }
 
-#btn-reset-route:hover {
-    background: #ff4444;
-    color: #fff;
-}
+#btn-reset-route:hover { background: #ff4444; color: #fff; }
 
+/* Визуальные эффекты на карте (линия и кольцо) */
 .route-line {
     stroke: #00ffcc;
     stroke-width: 2.5;
@@ -127,9 +150,23 @@ svg {
     pointer-events: none;
 }
 
+.route-ring {
+    fill: none;
+    stroke: #00ffcc;
+    stroke-width: 1.5;
+    stroke-dasharray: 4;
+    animation: spinRing 4s linear infinite;
+    pointer-events: none;
+}
+
 @keyframes routeFlow {
     from { stroke-dashoffset: 12; }
     to { stroke-dashoffset: 0; }
+}
+
+@keyframes spinRing {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
 }
 
 /* Поиск */
@@ -148,21 +185,13 @@ input {
 .search-item:hover { background: var(--hud-secondary); }
 
 /* Кнопки и Легенда */
-.controls {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 15px; 
-}
-
+.controls { display: flex; gap: 10px; margin-bottom: 10px; }
 .controls button {
     display: block; width: 40px; height: 40px;
     background: var(--hud-secondary); border: 1px solid var(--hud-cyan);
     color: var(--hud-cyan); font-size: 20px; cursor: pointer; transition: 0.2s;
 }
-.controls button:hover, .controls button.active { 
-    background: var(--hud-cyan); 
-    color: var(--hud-bg); 
-}
+.controls button:hover { background: var(--hud-cyan); color: var(--hud-bg); }
 
 .telemetry { font-size: 14px; letter-spacing: 1px; color: var(--hud-cyan); text-align: right; }
 
@@ -181,7 +210,6 @@ input {
 
 #tt-title { margin: 0; color: #ffffff; font-size: 16px; font-weight: normal; text-align: left; }
 #tt-faction-badge { font-size: 12px; font-weight: normal; text-align: left; margin-top: 4px; display: block; }
-/* Класс .tt-divider удален */
 
 #tt-info { 
     background-color: var(--hud-secondary); 
