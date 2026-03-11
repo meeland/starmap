@@ -24,20 +24,27 @@ let startX, startY;
 
 let planetsList = [];
 let planetMap = {};
-let globalConnections = []; // Глобальный список связей для маршрутизатора
+let globalConnections = []; 
 
 // Переменные маршрутизатора
 let isRoutingMode = false;
 let routeNodes = [];
-let routeLines = [];
+let routeVisualElements = []; // Хранит как линии, так и кольца
 let d0 = 0, dColor = 0, dOff = 0;
 
-// Управление маршрутизатором
+// Управление маршрутизатором с анимацией панели
 document.getElementById('btn-toggle-route').onclick = (e) => {
     isRoutingMode = !isRoutingMode;
-    document.getElementById('route-panel').style.display = isRoutingMode ? 'block' : 'none';
-    e.target.classList.toggle('active', isRoutingMode);
-    if (!isRoutingMode) resetRoute();
+    
+    const panel = document.getElementById('route-panel');
+    if (isRoutingMode) {
+        panel.classList.add('open');
+        e.target.classList.add('active');
+    } else {
+        panel.classList.remove('open');
+        e.target.classList.remove('active');
+        resetRoute();
+    }
 };
 
 document.getElementById('btn-reset-route').onclick = resetRoute;
@@ -45,8 +52,8 @@ document.getElementById('btn-reset-route').onclick = resetRoute;
 function resetRoute() {
     routeNodes = [];
     d0 = 0; dColor = 0; dOff = 0;
-    routeLines.forEach(l => l.remove());
-    routeLines = [];
+    routeVisualElements.forEach(el => el.remove());
+    routeVisualElements = [];
     updateRouteUI();
 }
 
@@ -57,9 +64,30 @@ function updateRouteUI() {
     document.getElementById('route-points').textContent = routeNodes.length;
 }
 
+// Создание вращающегося кольца выбора
+function createRouteRing(x, y) {
+    const ringGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    ringGroup.setAttribute('transform', `translate(${x}, ${y})`);
+    
+    const ring = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    ring.setAttribute('r', 8);
+    ring.setAttribute('cx', 0);
+    ring.setAttribute('cy', 0);
+    ring.setAttribute('class', 'route-ring');
+    
+    ringGroup.appendChild(ring);
+    routeVisualLayer.appendChild(ringGroup);
+    return ringGroup;
+}
+
 function handleRouteClick(planet) {
+    const absX2 = (planet.x / 100) * MAP_SIZE;
+    const absY2 = (planet.y / 100) * MAP_SIZE;
+
+    // Первая точка маршрута
     if (routeNodes.length === 0) {
         routeNodes.push(planet);
+        routeVisualElements.push(createRouteRing(absX2, absY2));
         updateRouteUI();
         return;
     }
@@ -67,18 +95,18 @@ function handleRouteClick(planet) {
     const last = routeNodes[routeNodes.length - 1];
     if (last.id === planet.id) return;
 
+    // Проверка наличия пути
     const conn = globalConnections.find(c => 
         (c.from == last.id && c.to == planet.id) || (c.to == last.id && c.from == planet.id)
     );
 
-    const isIsolated = !globalConnections.some(c => c.from == planet.id || c.to == planet.id);
+    // Условие для изолированных миров: позволяет "прыгать" если начальный ИЛИ целевой мир изолированы
+    const isTargetIsolated = !globalConnections.some(c => c.from == planet.id || c.to == planet.id);
+    const isLastIsolated = !globalConnections.some(c => c.from == last.id || c.to == last.id);
 
-    if (conn || isIsolated) {
+    if (conn || isTargetIsolated || isLastIsolated) {
         const absX1 = (last.x / 100) * MAP_SIZE;
         const absY1 = (last.y / 100) * MAP_SIZE;
-        const absX2 = (planet.x / 100) * MAP_SIZE;
-        const absY2 = (planet.y / 100) * MAP_SIZE;
-
         const dist = Math.sqrt(Math.pow(absX2 - absX1, 2) + Math.pow(absY2 - absY1, 2));
 
         if (conn) {
@@ -95,8 +123,10 @@ function handleRouteClick(planet) {
         line.setAttribute('x2', absX2);
         line.setAttribute('y2', absY2);
         line.setAttribute('class', 'route-line');
+        
         routeVisualLayer.appendChild(line);
-        routeLines.push(line);
+        routeVisualElements.push(line);
+        routeVisualElements.push(createRouteRing(absX2, absY2));
 
         routeNodes.push(planet);
         updateRouteUI();
@@ -144,7 +174,6 @@ svg.addEventListener('mousedown', (e) => {
 });
 
 window.addEventListener('mousemove', (e) => {
-    // Логика обновления координат мыши удалена
     if (!isDragging) return;
     translateX = e.clientX - startX;
     translateY = e.clientY - startY;
