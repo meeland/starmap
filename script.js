@@ -7,214 +7,241 @@ const svg = document.getElementById('starmap');
 const mapGroup = document.getElementById('map-group');
 const connectionsLayer = document.getElementById('connections-layer');
 const planetsLayer = document.getElementById('planets-layer');
-const routeVisualLayer = document.getElementById('route-visual-layer');
 
 const tooltip = document.getElementById('tooltip');
+const hoverTooltip = document.getElementById('hover-tooltip');
 const ttTitle = document.getElementById('tt-title');
 const ttInfo = document.getElementById('tt-info');
 const ttFactionBadge = document.getElementById('tt-faction-badge');
+const coordX = document.getElementById('coord-x');
+const coordY = document.getElementById('coord-y');
+const zoomLevelText = document.getElementById('zoom-level');
 
-// Состояние маршрута
-let isRoutingMode = false;
-let routeNodes = [];
-let routeLines = [];
-let d0 = 0, dColor = 0, dOff = 0;
-
-let planetsList = [];
-let connectionsList = [];
-
+let scale = 1;
+let translateX = 0;
+let translateY = 0;
 let isDragging = false;
 let startX, startY;
-let translateX = 0, translateY = 0;
-let scale = 1;
 
-// Инициализация управления
-document.getElementById('btn-toggle-route').onclick = () => {
-    isRoutingMode = !isRoutingMode;
-    document.getElementById('route-panel').style.display = isRoutingMode ? 'block' : 'none';
-    if (!isRoutingMode) resetRoute();
-};
+let planetsList = [];
+let planetMap = {};
 
-document.getElementById('btn-reset-route').onclick = resetRoute;
-
-function resetRoute() {
-    routeNodes = [];
-    d0 = 0; dColor = 0; dOff = 0;
-    routeLines.forEach(l => l.remove());
-    routeLines = [];
-    updateRouteUI();
+function updateTransform() {
+    mapGroup.setAttribute('transform', `translate(${translateX}, ${translateY}) scale(${scale})`);
+    zoomLevelText.textContent = scale.toFixed(2);
 }
 
-function updateRouteUI() {
-    document.getElementById('route-dist-0').textContent = d0.toFixed(1);
-    document.getElementById('route-dist-color').textContent = dColor.toFixed(1);
-    document.getElementById('route-dist-off').textContent = dOff.toFixed(1);
-    document.getElementById('route-points').textContent = routeNodes.length;
+function flyTo(x, y, targetScale = 2) {
+    const rect = svg.getBoundingClientRect();
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+
+    const targetX = centerX - x * targetScale;
+    const targetY = centerY - y * targetScale;
+
+    let progress = 0;
+    const startTx = translateX, startTy = translateY, startS = scale;
+
+    function animate() {
+        progress += 0.05;
+        if (progress > 1) progress = 1;
+        
+        const ease = progress * progress * (3 - 2 * progress);
+
+        translateX = startTx + (targetX - startTx) * ease;
+        translateY = startTy + (targetY - startTy) * ease;
+        scale = startS + (targetScale - startS) * ease;
+        
+        updateTransform();
+
+        if (progress < 1) requestAnimationFrame(animate);
+    }
+    requestAnimationFrame(animate);
 }
 
-// Загрузка
+svg.addEventListener('mousedown', (e) => {
+    if (e.button !== 0) return; 
+    isDragging = true;
+    startX = e.clientX - translateX;
+    startY = e.clientY - translateY;
+});
+
+window.addEventListener('mousemove', (e) => {
+    const rect = svg.getBoundingClientRect();
+    const mapX = (e.clientX - rect.left - translateX) / scale;
+    const mapY = (e.clientY - rect.top - translateY) / scale;
+    coordX.textContent = Math.round(mapX).toString().padStart(4, '0');
+    coordY.textContent = Math.round(mapY).toString().padStart(4, '0');
+
+    if (!isDragging) return;
+    translateX = e.clientX - startX;
+    translateY = e.clientY - startY;
+    updateTransform();
+});
+
+window.addEventListener('mouseup', () => isDragging = false);
+
+svg.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const rect = svg.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+
+    const zoomFactor = Math.exp((e.deltaY < 0 ? 1 : -1) * 0.1);
+    let newScale = Math.max(0.1, Math.min(scale * zoomFactor, 8)); 
+    const actualZoomFactor = newScale / scale;
+
+    translateX = mouseX - (mouseX - translateX) * actualZoomFactor;
+    translateY = mouseY - (mouseY - translateY) * actualZoomFactor;
+    scale = newScale;
+    updateTransform();
+}, { passive: false });
+
+document.getElementById('btn-zoom-in').onclick = () => flyTo((window.innerWidth/2 - translateX)/scale, (window.innerHeight/2 - translateY)/scale, scale * 1.5);
+document.getElementById('btn-zoom-out').onclick = () => flyTo((window.innerWidth/2 - translateX)/scale, (window.innerHeight/2 - translateY)/scale, scale / 1.5);
+document.getElementById('btn-reset').onclick = () => flyTo(MAP_SIZE/2, MAP_SIZE/2, 0.5);
+
+function fetchCSV(url) {
+    return new Promise((resolve, reject) => {
+        Papa.parse(url, { download: true, header: true, complete: results => resolve(results.data), error: err => reject(err) });
+    });
+}
+
 async function initMap() {
     try {
-        const [pRes, cRes] = await Promise.all([
-            fetch(PLANETS_CSV_URL).then(r => r.text()),
-            fetch(CONNECTIONS_CSV_URL).then(r => r.text())
-        ]);
-
-        planetsList = Papa.parse(pRes, {header:true}).data.filter(p => p.id);
-        connectionsList = Papa.parse(cRes, {header:true}).data.filter(c => c.from);
-
-        const planetMap = {};
+        const [planetsData, connectionsData] = await Promise.all([fetchCSV(PLANETS_CSV_URL), fetchCSV(CONNECTIONS_CSV_URL)]);
+        planetsList = planetsData.filter(p => p.id);
+        const connections = connectionsData.filter(c => c.from && c.to);
+        
         planetsList.forEach(p => planetMap[p.id] = p);
 
-        // Отрисовка связей
-        connectionsList.forEach(c => {
-            const p1 = planetMap[c.from], p2 = planetMap[c.to];
+        translateX = window.innerWidth / 2 - (MAP_SIZE / 2) * 0.3;
+        translateY = window.innerHeight / 2 - (MAP_SIZE / 2) * 0.3;
+        scale = 0.3;
+        updateTransform();
+
+        connections.forEach(conn => {
+            const p1 = planetMap[conn.from];
+            const p2 = planetMap[conn.to];
+            const routeType = Object.values(conn)[2]; 
+            
             if (p1 && p2) {
                 const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                line.setAttribute('x1', (p1.x/100)*MAP_SIZE);
-                line.setAttribute('y1', (p1.y/100)*MAP_SIZE);
-                line.setAttribute('x2', (p2.x/100)*MAP_SIZE);
-                line.setAttribute('y2', (p2.y/100)*MAP_SIZE);
+                line.setAttribute('x1', (p1.x / 100) * MAP_SIZE);
+                line.setAttribute('y1', (p1.y / 100) * MAP_SIZE);
+                line.setAttribute('x2', (p2.x / 100) * MAP_SIZE);
+                line.setAttribute('y2', (p2.y / 100) * MAP_SIZE);
                 line.setAttribute('class', 'connection');
-                line.style.stroke = getPathColor(c.type);
+                
+                let routeColor = '#626465'; 
+                if (routeType === 'V') routeColor = '#8a2be2'; 
+                else if (routeType === 'G') routeColor = '#2ecc71'; 
+                else if (routeType === 'Y') routeColor = '#f1c40f'; 
+                else if (routeType === 'R') routeColor = '#e74c3c'; 
+                else if (routeType === 'B') routeColor = '#3498db'; 
+                
+                line.style.stroke = routeColor;
                 connectionsLayer.appendChild(line);
             }
         });
 
-        // Отрисовка планет
         planetsList.forEach(planet => {
+            const absX = (planet.x / 100) * MAP_SIZE;
+            const absY = (planet.y / 100) * MAP_SIZE;
+
             const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-            const x = (planet.x/100)*MAP_SIZE, y = (planet.y/100)*MAP_SIZE;
+            
+            // Подтягиваем данные из factionsData
+            const factionInfo = factionsData[planet.faction] || factionsData["Нейтральные Системы"];
+            const color = factionInfo.mainColor;
+            const secondaryColor = factionInfo.secondaryColor;
 
             const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-            circle.setAttribute('cx', x); circle.setAttribute('cy', y);
-            circle.setAttribute('r', 3.5); circle.setAttribute('class', 'planet-circle');
-            circle.style.fill = (factionsData[planet.faction] || factionsData["Нейтральные Системы"]).mainColor;
+            circle.setAttribute('cx', absX);
+            circle.setAttribute('cy', absY);
+            circle.setAttribute('r', 2.75); 
+            circle.setAttribute('fill', color);
+            circle.setAttribute('class', 'planet-circle');
 
-            const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-            label.setAttribute('x', x); label.setAttribute('y', y + 10);
-            label.setAttribute('class', 'planet-label');
-            label.setAttribute('text-anchor', 'middle');
-            label.textContent = planet.name;
+            const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            text.textContent = planet.name;
+            text.setAttribute('x', absX);
+            text.setAttribute('y', absY + 9); 
+            text.setAttribute('text-anchor', 'middle');
+            text.setAttribute('class', 'planet-label');
 
-            group.appendChild(circle); group.appendChild(label);
-            
-            group.onclick = (e) => {
+            circle.addEventListener('mouseover', (e) => {
+                hoverTooltip.textContent = planet.name; 
+                hoverTooltip.style.left = `${e.pageX + 15}px`;
+                hoverTooltip.style.top = `${e.pageY - 25}px`;
+                hoverTooltip.style.borderColor = color;
+                hoverTooltip.style.display = 'block';
+            });
+
+            circle.addEventListener('mouseout', () => hoverTooltip.style.display = 'none');
+
+            circle.addEventListener('click', (e) => {
                 e.stopPropagation();
-                if (isRoutingMode) {
-                    handleRouteClick(planet);
-                } else {
-                    showTooltip(planet, e);
-                }
-            };
+                hoverTooltip.style.display = 'none';
+                
+                ttTitle.textContent = planet.name;
+                ttInfo.textContent = planet.info;
+                ttFactionBadge.textContent = factionInfo.name;
+                ttFactionBadge.style.color = color;
+                
+                // Используем вторичный цвет для рамки окна информации
+                tooltip.style.borderColor = secondaryColor; 
+                
+                tooltip.style.left = `${e.pageX + 15}px`;
+                tooltip.style.top = `${e.pageY + 15}px`;
+                tooltip.style.display = 'block';
 
+                flyTo(absX, absY, scale);
+            });
+
+            group.appendChild(circle);
+            group.appendChild(text);
             planetsLayer.appendChild(group);
         });
 
-        setupZoomPan();
+        svg.addEventListener('click', () => tooltip.style.display = 'none');
         setupSearch();
-    } catch (e) { console.error(e); }
-}
 
-function handleRouteClick(planet) {
-    if (routeNodes.length === 0) {
-        routeNodes.push(planet);
-        updateRouteUI();
-        return;
+    } catch (error) {
+        console.error("Ошибка при загрузке данных:", error);
     }
-
-    const last = routeNodes[routeNodes.length - 1];
-    if (last.id === planet.id) return;
-
-    const conn = connectionsList.find(c => 
-        (c.from == last.id && c.to == planet.id) || (c.to == last.id && c.from == planet.id)
-    );
-
-    const isTargetIsolated = !connectionsList.some(c => c.from == planet.id || c.to == planet.id);
-
-    if (conn || isTargetIsolated) {
-        // Расчет расстояния (в единицах MAP_SIZE)
-        const dist = Math.sqrt(Math.pow(planet.x - last.x, 2) + Math.pow(planet.y - last.y, 2)) * (MAP_SIZE / 100);
-
-        if (conn) {
-            const type = conn.type || '0';
-            if (type === '0') d0 += dist;
-            else if (['V','G','Y','R','B'].includes(type)) dColor += dist;
-        } else {
-            dOff += dist;
-        }
-
-        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-        line.setAttribute('x1', (last.x/100)*MAP_SIZE);
-        line.setAttribute('y1', (last.y/100)*MAP_SIZE);
-        line.setAttribute('x2', (planet.x/100)*MAP_SIZE);
-        line.setAttribute('y2', (planet.y/100)*MAP_SIZE);
-        line.setAttribute('class', 'route-line');
-        routeVisualLayer.appendChild(line);
-        routeLines.push(line);
-
-        routeNodes.push(planet);
-        updateRouteUI();
-    }
-}
-
-function getPathColor(type) {
-    const colors = { 'V': '#ff00ff', 'G': '#00ff00', 'Y': '#ffff00', 'R': '#ff0000', 'B': '#0000ff' };
-    return colors[type] || '#3d4963';
-}
-
-function showTooltip(planet, e) {
-    const faction = factionsData[planet.faction] || factionsData["Нейтральные Системы"];
-    ttTitle.textContent = planet.name;
-    ttTitle.style.color = faction.mainColor;
-    ttFactionBadge.textContent = planet.faction;
-    ttFactionBadge.style.color = faction.mainColor;
-    ttInfo.textContent = planet.info;
-    tooltip.style.display = 'block';
-    tooltip.style.left = e.pageX + 15 + 'px';
-    tooltip.style.top = e.pageY + 15 + 'px';
-}
-
-function setupZoomPan() {
-    const container = document.getElementById('map-container');
-    container.onmousedown = (e) => { isDragging = true; startX = e.clientX - translateX; startY = e.clientY - translateY; };
-    window.onmousemove = (e) => { if (isDragging) { translateX = e.clientX - startX; translateY = e.clientY - startY; applyTransform(); } };
-    window.onmouseup = () => isDragging = false;
-    container.onwheel = (e) => {
-        e.preventDefault();
-        const zoom = Math.exp(-e.deltaY * 0.001);
-        scale *= zoom;
-        scale = Math.min(Math.max(scale, 0.5), 10);
-        applyTransform();
-    };
-}
-
-function applyTransform() { mapGroup.setAttribute('transform', `translate(${translateX}, ${translateY}) scale(${scale})`); }
-
-function flyTo(x, y, z) {
-    scale = z;
-    translateX = window.innerWidth/2 - x*scale;
-    translateY = window.innerHeight/2 - y*scale;
-    applyTransform();
 }
 
 function setupSearch() {
-    const input = document.getElementById('planet-search'), res = document.getElementById('search-results');
-    input.oninput = (e) => {
+    const searchInput = document.getElementById('planet-search');
+    const resultsDiv = document.getElementById('search-results');
+
+    searchInput.addEventListener('input', (e) => {
         const val = e.target.value.toLowerCase();
-        res.innerHTML = '';
-        if (!val) { res.style.display = 'none'; return; }
+        resultsDiv.innerHTML = '';
+        if (!val) { resultsDiv.style.display = 'none'; return; }
+
         const matches = planetsList.filter(p => p.name.toLowerCase().includes(val));
-        if (matches.length) {
-            res.style.display = 'block';
-            matches.forEach(m => {
-                const d = document.createElement('div'); d.className = 'search-item'; d.textContent = m.name;
-                d.onclick = () => { flyTo((m.x/100)*MAP_SIZE, (m.y/100)*MAP_SIZE, 3); res.style.display = 'none'; input.value = ''; };
-                res.appendChild(d);
+        
+        if (matches.length > 0) {
+            resultsDiv.style.display = 'block';
+            matches.forEach(match => {
+                const div = document.createElement('div');
+                div.className = 'search-item';
+                div.textContent = match.name;
+                div.onclick = () => {
+                    searchInput.value = '';
+                    resultsDiv.style.display = 'none';
+                    const absX = (match.x / 100) * MAP_SIZE;
+                    const absY = (match.y / 100) * MAP_SIZE;
+                    flyTo(absX, absY, 3);
+                };
+                resultsDiv.appendChild(div);
             });
+        } else {
+            resultsDiv.style.display = 'none';
         }
-    };
+    });
 }
 
 initMap();
-svg.onclick = () => { if(!isRoutingMode) tooltip.style.display = 'none'; };
