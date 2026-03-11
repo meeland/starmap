@@ -67,6 +67,71 @@ svg {
 .bottom-left { bottom: 20px; left: 20px; }
 .bottom-right { bottom: 20px; right: 20px; display: flex; flex-direction: column; align-items: flex-end; }
 
+/* Инструмент маршрута */
+#route-panel {
+    display: none;
+    position: absolute;
+    bottom: 100px;
+    right: 20px;
+    background: var(--hud-bg);
+    border: 1px solid var(--hud-cyan);
+    padding: 15px;
+    border-radius: 4px;
+    pointer-events: auto;
+    z-index: 100;
+    width: 220px;
+}
+
+.route-header {
+    color: var(--hud-cyan);
+    font-size: 14px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.2);
+    padding-bottom: 5px;
+}
+
+.route-stat {
+    font-size: 12px;
+    margin-bottom: 5px;
+    color: #ccc;
+}
+
+.route-stat span {
+    color: #fff;
+    float: right;
+    font-weight: bold;
+}
+
+#btn-reset-route {
+    width: 100%;
+    margin-top: 10px;
+    background: var(--hud-secondary);
+    border: 1px solid #ff4444;
+    color: #ff4444;
+    padding: 5px;
+    cursor: pointer;
+    font-family: 'Orbitron', sans-serif;
+    transition: 0.2s;
+}
+
+#btn-reset-route:hover {
+    background: #ff4444;
+    color: #fff;
+}
+
+.route-line {
+    stroke: #00ffcc;
+    stroke-width: 2.5;
+    stroke-dasharray: 6;
+    animation: routeFlow 1s linear infinite;
+    pointer-events: none;
+}
+
+@keyframes routeFlow {
+    from { stroke-dashoffset: 12; }
+    to { stroke-dashoffset: 0; }
+}
+
 /* Поиск */
 .search-box { position: relative; width: 250px; }
 input {
@@ -86,7 +151,7 @@ input {
 .controls {
     display: flex;
     gap: 10px;
-    margin-bottom: 15px; /* Отступ между кнопками и координатами */
+    margin-bottom: 15px; 
 }
 
 .controls button {
@@ -94,7 +159,10 @@ input {
     background: var(--hud-secondary); border: 1px solid var(--hud-cyan);
     color: var(--hud-cyan); font-size: 20px; cursor: pointer; transition: 0.2s;
 }
-.controls button:hover { background: var(--hud-cyan); color: var(--hud-bg); }
+.controls button:hover, .controls button.active { 
+    background: var(--hud-cyan); 
+    color: var(--hud-bg); 
+}
 
 .telemetry { font-size: 14px; letter-spacing: 1px; color: var(--hud-cyan); text-align: right; }
 
@@ -113,7 +181,7 @@ input {
 
 #tt-title { margin: 0; color: #ffffff; font-size: 16px; font-weight: normal; text-align: left; }
 #tt-faction-badge { font-size: 12px; font-weight: normal; text-align: left; margin-top: 4px; display: block; }
-.tt-divider { border: none; border-top: 1px solid rgba(255,255,255,0.2); margin: 6px 0; }
+/* Класс .tt-divider удален */
 
 #tt-info { 
     background-color: var(--hud-secondary); 
