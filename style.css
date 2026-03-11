@@ -1,128 +1,149 @@
-:root {
-    --bg-color: #03050a;
-    --hud-bg: #1b1926;        
-    --hud-secondary: #13121a; 
-    --hud-cyan: #0c85e2;      
-    
-    /* Цвета обновлены под новые стандарты фракций */
-    --rep-color: #91DBFF;
-    --cis-color: #FCFECD;
-    --neu-color: #a0a0a0;
-}
-
 body {
     margin: 0;
-    background-color: var(--bg-color);
+    background-color: #0b0f19; /* Тёмный космический фон */
     color: #ffffff;
-    font-family: 'Orbitron', sans-serif;
+    font-family: sans-serif;
     overflow: hidden;
-    user-select: none;
 }
 
 #map-container {
     width: 100vw;
     height: 100vh;
-    position: absolute;
-    top: 0;
-    left: 0;
-    cursor: crosshair;
-    z-index: 1;
+    position: relative;
 }
-
-#map-container:active { cursor: grabbing; }
 
 svg {
     width: 100%;
     height: 100%;
-    display: block;
 }
 
-.planet-circle { cursor: pointer; transition: r 0.1s; }
-.planet-circle:hover { r: 5; }
+.planet {
+    fill: #e0e0e0;
+    font-size: 24px;
+    cursor: pointer;
+    user-select: none;
+    transition: fill 0.2s;
+}
 
-.planet-label {
-    font-family: 'Orbitron', sans-serif;
-    font-size: 5px;
-    fill: #ccc;
+.planet:hover {
+    fill: #4db8ff;
+}
+
+/* Стили для отрисовки базовых дорог */
+.connection {
+    stroke: #334466;
+    stroke-width: 2;
+    opacity: 0.6;
+}
+
+/* Стили всплывающего окна */
+#tooltip {
+    position: absolute;
+    background: rgba(15, 25, 40, 0.95);
+    border: 1px solid #4db8ff;
+    padding: 15px;
+    border-radius: 8px;
+    pointer-events: none;
+    display: none;
+    max-width: 250px;
+    box-shadow: 0 0 15px rgba(77, 184, 255, 0.2);
+    z-index: 10;
+}
+
+#tooltip h3 {
+    margin: 0 0 10px 0;
+    color: #4db8ff;
+}
+
+#tooltip p {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.4;
+    color: #cccccc;
+}
+
+/* Панель управления */
+#controls-panel {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    z-index: 100;
+}
+
+#controls-panel button {
+    padding: 10px 15px;
+    background: #181a20;
+    color: #4db8ff;
+    border: 1px solid #4db8ff;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+#controls-panel button:hover {
+    background: #2b303b;
+}
+
+/* Окно маршрутизатора */
+#route-panel {
+    display: none;
+    position: absolute;
+    bottom: 70px; /* Расположено над панелью управления */
+    right: 20px;
+    background: linear-gradient(145deg, #2b303b, #181a20);
+    border: 1px solid #5c667a;
+    padding: 15px;
+    border-radius: 6px;
+    color: #e0e0e0;
+    width: 220px;
+    max-height: 250px; /* Вертикальный скролл для защиты интерфейса от разрастания */
+    overflow-y: auto;
+    box-shadow: inset 0 0 8px rgba(255,255,255,0.05), 0 4px 10px rgba(0,0,0,0.5);
+    z-index: 100;
+}
+
+#route-panel h4 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #4db8ff;
+}
+
+#route-panel p {
+    margin: 8px 0;
+    font-size: 14px;
+}
+
+#btn-reset-route {
+    margin-top: 15px;
+    width: 100%;
+    padding: 8px;
+    background: #5c667a;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+#btn-reset-route:hover {
+    background: #7a87a1;
+}
+
+/* Стили для режима маршрутизации */
+.routing-mode-active .planet {
+    cursor: crosshair;
+}
+
+/* Временная линия маршрута */
+.route-line {
+    stroke: #ffbb00;
+    stroke-width: 3;
+    stroke-dasharray: 6, 6;
+    animation: dash 1.5s linear infinite;
     pointer-events: none;
 }
 
-.connection { stroke-width: 1.4; }
-
-/* UI HUD */
-#ui-layer {
-    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    pointer-events: none; z-index: 10;
-}
-
-.hud-panel {
-    position: absolute; 
-    background: var(--hud-bg); 
-    border: 1px solid var(--hud-cyan);
-    padding: 15px; border-radius: 4px; pointer-events: auto;
-}
-
-.top-left { top: 20px; left: 20px; }
-.top-right { top: 20px; right: 20px; }
-.bottom-left { bottom: 20px; left: 20px; }
-.bottom-right { bottom: 20px; right: 20px; display: flex; flex-direction: column; align-items: flex-end; }
-
-/* Поиск */
-.search-box { position: relative; width: 250px; }
-input {
-    width: 100%; background: var(--hud-secondary); border: 1px solid var(--hud-cyan);
-    color: var(--hud-cyan); padding: 8px; font-family: 'Orbitron', sans-serif;
-    outline: none; box-sizing: border-box;
-}
-#search-results {
-    position: absolute; top: 100%; left: 0; width: 100%;
-    background: var(--hud-bg); border: 1px solid var(--hud-cyan);
-    border-top: none; display: none; max-height: 200px; overflow-y: auto;
-}
-.search-item { padding: 8px; cursor: pointer; font-size: 12px; }
-.search-item:hover { background: var(--hud-secondary); }
-
-/* Кнопки и Легенда */
-.controls {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 15px; /* Отступ между кнопками и координатами */
-}
-
-.controls button {
-    display: block; width: 40px; height: 40px;
-    background: var(--hud-secondary); border: 1px solid var(--hud-cyan);
-    color: var(--hud-cyan); font-size: 20px; cursor: pointer; transition: 0.2s;
-}
-.controls button:hover { background: var(--hud-cyan); color: var(--hud-bg); }
-
-.telemetry { font-size: 14px; letter-spacing: 1px; color: var(--hud-cyan); text-align: right; }
-
-.legend-item { display: flex; align-items: center; margin-bottom: 8px; font-size: 12px; }
-.color-box { width: 12px; height: 12px; margin-right: 10px; border-radius: 50%; }
-.color-box.rep { background: var(--rep-color); }
-.color-box.cis { background: var(--cis-color); }
-.color-box.neu { background: var(--neu-color); }
-
-/* Окна информации */
-#tooltip {
-    position: absolute; background: var(--hud-bg);
-    border: 1px solid var(--hud-cyan); padding: 15px 20px; border-radius: 4px;
-    pointer-events: none; display: none; width: 300px; z-index: 100;
-}
-
-#tt-title { margin: 0; color: #ffffff; font-size: 16px; font-weight: normal; text-align: left; }
-#tt-faction-badge { font-size: 12px; font-weight: normal; text-align: left; margin-top: 4px; display: block; }
-.tt-divider { border: none; border-top: 1px solid rgba(255,255,255,0.2); margin: 6px 0; }
-
-#tt-info { 
-    background-color: var(--hud-secondary); 
-    padding: 10px; border-radius: 6px; font-family: sans-serif; 
-    font-size: 11px; line-height: 1.5; color: #ccc; margin: 0; box-sizing: border-box;
-}
-
-#hover-tooltip {
-    position: absolute; background: var(--hud-bg); border: 1px solid #fff;
-    padding: 5px 10px; border-radius: 2px; pointer-events: none;
-    display: none; font-size: 12px; z-index: 50; color: #fff; text-transform: uppercase;
+@keyframes dash {
+    to {
+        stroke-dashoffset: -12;
+    }
 }
