@@ -1,6 +1,6 @@
 // ВАЖНО: Вставьте ваши актуальные ссылки на опубликованные CSV файлы
-const PLANETS_CSV_URL = 'ВАША_ССЫЛКА_CSV_PLANETS';
-const CONNECTIONS_CSV_URL = 'ВАША_ССЫЛКА_CSV_CONNECTIONS';
+const PLANETS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTVPQVMnjZWNBWkWkebK4aCnYi3PhsewOGOaxSLfx0Fj2ZYc6tYkSS4iNoV8tWKEj22YEn8ysYE6kgl/pub?gid=416114984&single=true&output=csv';
+const CONNECTIONS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTVPQVMnjZWNBWkWkebK4aCnYi3PhsewOGOaxSLfx0Fj2ZYc6tYkSS4iNoV8tWKEj22YEn8ysYE6kgl/pub?gid=1688125961&single=true&output=csv';
 
 const svg = document.getElementById('starmap');
 const tooltip = document.getElementById('tooltip');
@@ -201,3 +201,4 @@ async function initMap() {
 }
 
 initMap();
+
