@@ -1,5 +1,5 @@
 :root {
-    --bg-color: #030712;
+    --bg-color: #03050a; /* Тёмный, почти чёрный фон */
     --hud-cyan: #00f0ff;
     --hud-dark: rgba(10, 15, 25, 0.85);
     --rep-color: #ff3333;
@@ -10,7 +10,6 @@
 body {
     margin: 0;
     background-color: var(--bg-color);
-    background-image: radial-gradient(circle at 50% 50%, #0a1128 0%, #000000 100%);
     color: #ffffff;
     font-family: 'Orbitron', sans-serif;
     overflow: hidden;
@@ -36,15 +35,15 @@ svg {
 }
 
 /* Элементы карты */
-.planet-circle { cursor: pointer; transition: r 0.2s; }
-.planet-circle:hover { r: 15; } /* Увеличивается при наведении */
+.planet-circle { cursor: pointer; transition: r 0.1s; }
+.planet-circle:hover { r: 10; } /* Уменьшено с 15 */
 
 .planet-label {
     font-family: 'Orbitron', sans-serif;
-    font-size: 14px;
-    fill: #fff;
+    font-size: 10px; /* Уменьшено с 14px */
+    fill: #ccc;
     pointer-events: none;
-    text-shadow: 0px 0px 5px #000;
+    text-shadow: 1px 1px 2px #000; /* Более легкая тень для производительности */
 }
 
 .connection {
@@ -60,20 +59,15 @@ svg {
 
 /* UI HUD */
 #ui-layer {
-    position: absolute;
-    top: 0; left: 0; width: 100%; height: 100%;
-    pointer-events: none;
-    z-index: 10;
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none; z-index: 10;
 }
 
 .hud-panel {
-    position: absolute;
-    background: var(--hud-dark);
+    position: absolute; background: var(--hud-dark);
     border: 1px solid rgba(0, 240, 255, 0.3);
     box-shadow: 0 0 15px rgba(0, 240, 255, 0.1);
-    padding: 15px;
-    border-radius: 4px;
-    pointer-events: auto;
+    padding: 15px; border-radius: 4px; pointer-events: auto;
     backdrop-filter: blur(5px);
 }
 
@@ -82,13 +76,7 @@ svg {
 .bottom-left { bottom: 20px; left: 20px; }
 .bottom-right { bottom: 20px; right: 20px; }
 
-h1 {
-    margin: 0 0 15px 0;
-    font-size: 18px;
-    color: var(--hud-cyan);
-    letter-spacing: 2px;
-    text-shadow: 0 0 8px var(--hud-cyan);
-}
+h1 { margin: 0 0 15px 0; font-size: 18px; color: var(--hud-cyan); letter-spacing: 2px; }
 
 /* Поиск */
 .search-box { position: relative; }
@@ -97,7 +85,6 @@ input {
     color: var(--hud-cyan); padding: 8px; font-family: 'Orbitron', sans-serif;
     outline: none; box-sizing: border-box;
 }
-input:focus { box-shadow: 0 0 10px var(--hud-cyan); }
 #search-results {
     position: absolute; top: 100%; left: 0; width: 100%;
     background: var(--hud-dark); border: 1px solid var(--hud-cyan);
@@ -106,7 +93,7 @@ input:focus { box-shadow: 0 0 10px var(--hud-cyan); }
 .search-item { padding: 8px; cursor: pointer; font-size: 12px; }
 .search-item:hover { background: rgba(0, 240, 255, 0.2); }
 
-/* Кнопки */
+/* Кнопки и Легенда */
 .controls button {
     display: block; width: 40px; height: 40px; margin-top: 10px;
     background: rgba(0,0,0,0.6); border: 1px solid var(--hud-cyan);
@@ -114,19 +101,17 @@ input:focus { box-shadow: 0 0 10px var(--hud-cyan); }
 }
 .controls button:hover { background: var(--hud-cyan); color: #000; }
 
-/* Легенда */
 .legend-item { display: flex; align-items: center; margin-bottom: 8px; font-size: 12px; }
-.color-box { width: 12px; height: 12px; margin-right: 10px; border-radius: 50%; box-shadow: 0 0 8px currentColor; }
-.color-box.rep { background: var(--rep-color); color: var(--rep-color); }
-.color-box.cis { background: var(--cis-color); color: var(--cis-color); }
-.color-box.neu { background: var(--neu-color); color: var(--neu-color); }
+.color-box { width: 12px; height: 12px; margin-right: 10px; border-radius: 50%; }
+.color-box.rep { background: var(--rep-color); }
+.color-box.cis { background: var(--cis-color); }
+.color-box.neu { background: var(--neu-color); }
 
 /* Окна информации */
 #tooltip {
     position: absolute; background: rgba(5, 10, 20, 0.95);
     border: 1px solid var(--hud-cyan); padding: 20px; border-radius: 4px;
-    pointer-events: none; display: none; width: 300px;
-    box-shadow: 0 0 20px rgba(0, 240, 255, 0.2); z-index: 100;
+    pointer-events: none; display: none; width: 300px; z-index: 100;
 }
 .tooltip-header { display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px; margin-bottom: 10px; }
 #tooltip h3 { margin: 0; color: #fff; font-size: 18px; }
