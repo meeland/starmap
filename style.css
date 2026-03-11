@@ -2,127 +2,107 @@
     --bg-color: #03050a;
     --hud-bg: #1b1926;        
     --hud-secondary: #13121a; 
-    --hud-cyan: #0c85e2;      
+    --hud-accent: #0c85e2;    
     
-    /* Цвета обновлены под новые стандарты фракций */
     --rep-color: #91DBFF;
     --cis-color: #FCFECD;
     --neu-color: #a0a0a0;
 }
 
 body {
-    margin: 0;
-    background-color: var(--bg-color);
-    color: #ffffff;
-    font-family: 'Orbitron', sans-serif;
-    overflow: hidden;
-    user-select: none;
+    margin: 0; background-color: var(--bg-color);
+    color: #ffffff; font-family: 'Orbitron', sans-serif;
+    overflow: hidden; user-select: none;
 }
 
-#map-container {
-    width: 100vw;
-    height: 100vh;
-    position: absolute;
-    top: 0;
-    left: 0;
-    cursor: crosshair;
-    z-index: 1;
-}
+#map-container { width: 100vw; height: 100vh; cursor: crosshair; }
 
-#map-container:active { cursor: grabbing; }
-
-svg {
-    width: 100%;
-    height: 100%;
-    display: block;
-}
-
+/* Объекты карты */
 .planet-circle { cursor: pointer; transition: r 0.1s; }
 .planet-circle:hover { r: 5; }
+.planet-label { font-size: 5px; fill: #ccc; pointer-events: none; }
+.connection { stroke-width: 1.4; opacity: 0.6; }
 
-.planet-label {
-    font-family: 'Orbitron', sans-serif;
-    font-size: 5px;
-    fill: #ccc;
+/* Линия активного маршрута */
+.active-route-line {
+    stroke: #fff;
+    stroke-width: 2;
+    stroke-dasharray: 6 4;
     pointer-events: none;
+    animation: dash 1s linear infinite;
+}
+@keyframes dash {
+    to { stroke-dashoffset: -10; }
 }
 
-.connection { stroke-width: 1.4; }
-
-/* UI HUD */
-#ui-layer {
-    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    pointer-events: none; z-index: 10;
-}
-
+/* HUD Интерфейс */
 .hud-panel {
-    position: absolute; 
-    background: var(--hud-bg); 
-    border: 1px solid var(--hud-cyan);
-    padding: 15px; border-radius: 4px; pointer-events: auto;
+    position: absolute; background: var(--hud-bg); 
+    border: 1px solid var(--hud-accent);
+    padding: 12px; border-radius: 4px; pointer-events: auto;
 }
 
 .top-left { top: 20px; left: 20px; }
 .top-right { top: 20px; right: 20px; }
-.bottom-left { bottom: 20px; left: 20px; }
 .bottom-right { bottom: 20px; right: 20px; display: flex; flex-direction: column; align-items: flex-end; }
 
-/* Поиск */
-.search-box { position: relative; width: 250px; }
-input {
-    width: 100%; background: var(--hud-secondary); border: 1px solid var(--hud-cyan);
-    color: var(--hud-cyan); padding: 8px; font-family: 'Orbitron', sans-serif;
-    outline: none; box-sizing: border-box;
-}
-#search-results {
-    position: absolute; top: 100%; left: 0; width: 100%;
-    background: var(--hud-bg); border: 1px solid var(--hud-cyan);
-    border-top: none; display: none; max-height: 200px; overflow-y: auto;
-}
-.search-item { padding: 8px; cursor: pointer; font-size: 12px; }
-.search-item:hover { background: var(--hud-secondary); }
-
-/* Кнопки и Легенда */
-.controls {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 15px; /* Отступ между кнопками и координатами */
-}
-
+/* Кнопки управления (Органы) */
+.controls { display: flex; gap: 8px; margin-bottom: 10px; justify-content: flex-end; }
 .controls button {
-    display: block; width: 40px; height: 40px;
-    background: var(--hud-secondary); border: 1px solid var(--hud-cyan);
-    color: var(--hud-cyan); font-size: 20px; cursor: pointer; transition: 0.2s;
+    width: 36px; height: 36px; background: var(--hud-secondary);
+    border: 1px solid var(--hud-accent); color: var(--hud-accent);
+    cursor: pointer; font-family: 'Orbitron'; transition: 0.2s;
 }
-.controls button:hover { background: var(--hud-cyan); color: var(--hud-bg); }
+.controls button:hover { background: var(--hud-accent); color: var(--hud-bg); }
 
-.telemetry { font-size: 14px; letter-spacing: 1px; color: var(--hud-cyan); text-align: right; }
+.telemetry { font-size: 12px; color: var(--hud-accent); text-align: right; }
 
-.legend-item { display: flex; align-items: center; margin-bottom: 8px; font-size: 12px; }
-.color-box { width: 12px; height: 12px; margin-right: 10px; border-radius: 50%; }
+/* Поиск */
+.search-box { width: 220px; }
+input {
+    width: 100%; background: var(--hud-secondary); border: 1px solid var(--hud-accent);
+    color: var(--hud-accent); padding: 8px; outline: none; font-family: 'Orbitron'; box-sizing: border-box;
+}
+
+/* Легенда */
+.legend-item { display: flex; align-items: center; margin-bottom: 6px; font-size: 11px; }
+.color-box { width: 10px; height: 10px; margin-right: 8px; border-radius: 50%; }
 .color-box.rep { background: var(--rep-color); }
 .color-box.cis { background: var(--cis-color); }
 .color-box.neu { background: var(--neu-color); }
 
-/* Окна информации */
+/* Окно информации */
 #tooltip {
-    position: absolute; background: var(--hud-bg);
-    border: 1px solid var(--hud-cyan); padding: 15px 20px; border-radius: 4px;
-    pointer-events: none; display: none; width: 300px; z-index: 100;
+    position: absolute; background: var(--hud-bg); border: 1px solid var(--hud-accent);
+    padding: 15px; border-radius: 4px; display: none; width: 280px; z-index: 100; pointer-events: none;
 }
-
-#tt-title { margin: 0; color: #ffffff; font-size: 16px; font-weight: normal; text-align: left; }
-#tt-faction-badge { font-size: 12px; font-weight: normal; text-align: left; margin-top: 4px; display: block; }
-.tt-divider { border: none; border-top: 1px solid rgba(255,255,255,0.2); margin: 6px 0; }
-
+#tt-title { font-size: 16px; margin-bottom: 4px; }
+#tt-faction-badge { font-size: 11px; margin-bottom: 8px; }
+.tt-divider { border: none; border-top: 1px solid rgba(255,255,255,0.1); margin: 6px 0; }
 #tt-info { 
-    background-color: var(--hud-secondary); 
-    padding: 10px; border-radius: 6px; font-family: sans-serif; 
-    font-size: 11px; line-height: 1.5; color: #ccc; margin: 0; box-sizing: border-box;
+    background: var(--hud-secondary); padding: 10px; border-radius: 6px;
+    font-size: 11px; color: #bbb; font-family: sans-serif;
 }
 
 #hover-tooltip {
     position: absolute; background: var(--hud-bg); border: 1px solid #fff;
-    padding: 5px 10px; border-radius: 2px; pointer-events: none;
-    display: none; font-size: 12px; z-index: 50; color: #fff; text-transform: uppercase;
+    padding: 4px 8px; font-size: 10px; display: none; z-index: 50; pointer-events: none; color: #fff;
 }
+
+/* Маршрутизатор */
+#route-container { margin-bottom: 15px; width: 220px; display: flex; flex-direction: column; align-items: flex-end; }
+#route-stats {
+    display: none; width: 100%; margin-bottom: 10px; font-size: 10px; color: #ccc; 
+    background: var(--hud-secondary); padding: 10px; border-radius: 4px; 
+    border: 1px solid var(--hud-accent); box-sizing: border-box; text-align: left;
+}
+.route-stat-item { margin-bottom: 4px; }
+.route-stat-item.highlight { color: #fff; margin-bottom: 8px; font-size: 11px; }
+.route-stat-item span { float: right; color: var(--hud-accent); font-weight: bold; }
+
+.hud-btn {
+    width: 100%; background: var(--hud-secondary); border: 1px solid var(--hud-accent);
+    color: var(--hud-accent); padding: 8px; font-family: 'Orbitron'; cursor: pointer; transition: 0.2s;
+}
+.hud-btn:hover { background: var(--hud-accent); color: var(--hud-bg); }
+.hud-btn.mt-10 { margin-top: 10px; }
