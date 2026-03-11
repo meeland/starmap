@@ -6,6 +6,7 @@ const MAP_SIZE = 4000;
 const svg = document.getElementById('starmap');
 const mapGroup = document.getElementById('map-group');
 const connectionsLayer = document.getElementById('connections-layer');
+const routeVisualLayer = document.getElementById('route-visual-layer');
 const planetsLayer = document.getElementById('planets-layer');
 
 const tooltip = document.getElementById('tooltip');
@@ -13,8 +14,6 @@ const hoverTooltip = document.getElementById('hover-tooltip');
 const ttTitle = document.getElementById('tt-title');
 const ttInfo = document.getElementById('tt-info');
 const ttFactionBadge = document.getElementById('tt-faction-badge');
-const coordX = document.getElementById('coord-x');
-const coordY = document.getElementById('coord-y');
 const zoomLevelText = document.getElementById('zoom-level');
 
 let scale = 1;
@@ -25,6 +24,84 @@ let startX, startY;
 
 let planetsList = [];
 let planetMap = {};
+let globalConnections = []; // Глобальный список связей для маршрутизатора
+
+// Переменные маршрутизатора
+let isRoutingMode = false;
+let routeNodes = [];
+let routeLines = [];
+let d0 = 0, dColor = 0, dOff = 0;
+
+// Управление маршрутизатором
+document.getElementById('btn-toggle-route').onclick = (e) => {
+    isRoutingMode = !isRoutingMode;
+    document.getElementById('route-panel').style.display = isRoutingMode ? 'block' : 'none';
+    e.target.classList.toggle('active', isRoutingMode);
+    if (!isRoutingMode) resetRoute();
+};
+
+document.getElementById('btn-reset-route').onclick = resetRoute;
+
+function resetRoute() {
+    routeNodes = [];
+    d0 = 0; dColor = 0; dOff = 0;
+    routeLines.forEach(l => l.remove());
+    routeLines = [];
+    updateRouteUI();
+}
+
+function updateRouteUI() {
+    document.getElementById('route-dist-0').textContent = d0.toFixed(1);
+    document.getElementById('route-dist-color').textContent = dColor.toFixed(1);
+    document.getElementById('route-dist-off').textContent = dOff.toFixed(1);
+    document.getElementById('route-points').textContent = routeNodes.length;
+}
+
+function handleRouteClick(planet) {
+    if (routeNodes.length === 0) {
+        routeNodes.push(planet);
+        updateRouteUI();
+        return;
+    }
+
+    const last = routeNodes[routeNodes.length - 1];
+    if (last.id === planet.id) return;
+
+    const conn = globalConnections.find(c => 
+        (c.from == last.id && c.to == planet.id) || (c.to == last.id && c.from == planet.id)
+    );
+
+    const isIsolated = !globalConnections.some(c => c.from == planet.id || c.to == planet.id);
+
+    if (conn || isIsolated) {
+        const absX1 = (last.x / 100) * MAP_SIZE;
+        const absY1 = (last.y / 100) * MAP_SIZE;
+        const absX2 = (planet.x / 100) * MAP_SIZE;
+        const absY2 = (planet.y / 100) * MAP_SIZE;
+
+        const dist = Math.sqrt(Math.pow(absX2 - absX1, 2) + Math.pow(absY2 - absY1, 2));
+
+        if (conn) {
+            const type = Object.values(conn)[2] || '0';
+            if (type === '0') d0 += dist;
+            else if (['V','G','Y','R','B'].includes(type)) dColor += dist;
+        } else {
+            dOff += dist;
+        }
+
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', absX1);
+        line.setAttribute('y1', absY1);
+        line.setAttribute('x2', absX2);
+        line.setAttribute('y2', absY2);
+        line.setAttribute('class', 'route-line');
+        routeVisualLayer.appendChild(line);
+        routeLines.push(line);
+
+        routeNodes.push(planet);
+        updateRouteUI();
+    }
+}
 
 function updateTransform() {
     mapGroup.setAttribute('transform', `translate(${translateX}, ${translateY}) scale(${scale})`);
@@ -67,12 +144,7 @@ svg.addEventListener('mousedown', (e) => {
 });
 
 window.addEventListener('mousemove', (e) => {
-    const rect = svg.getBoundingClientRect();
-    const mapX = (e.clientX - rect.left - translateX) / scale;
-    const mapY = (e.clientY - rect.top - translateY) / scale;
-    coordX.textContent = Math.round(mapX).toString().padStart(4, '0');
-    coordY.textContent = Math.round(mapY).toString().padStart(4, '0');
-
+    // Логика обновления координат мыши удалена
     if (!isDragging) return;
     translateX = e.clientX - startX;
     translateY = e.clientY - startY;
@@ -111,7 +183,7 @@ async function initMap() {
     try {
         const [planetsData, connectionsData] = await Promise.all([fetchCSV(PLANETS_CSV_URL), fetchCSV(CONNECTIONS_CSV_URL)]);
         planetsList = planetsData.filter(p => p.id);
-        const connections = connectionsData.filter(c => c.from && c.to);
+        globalConnections = connectionsData.filter(c => c.from && c.to);
         
         planetsList.forEach(p => planetMap[p.id] = p);
 
@@ -120,7 +192,7 @@ async function initMap() {
         scale = 0.3;
         updateTransform();
 
-        connections.forEach(conn => {
+        globalConnections.forEach(conn => {
             const p1 = planetMap[conn.from];
             const p2 = planetMap[conn.to];
             const routeType = Object.values(conn)[2]; 
@@ -151,7 +223,6 @@ async function initMap() {
 
             const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
             
-            // Подтягиваем данные из factionsData
             const factionInfo = factionsData[planet.faction] || factionsData["Нейтральные Системы"];
             const color = factionInfo.mainColor;
             const secondaryColor = factionInfo.secondaryColor;
@@ -184,19 +255,22 @@ async function initMap() {
                 e.stopPropagation();
                 hoverTooltip.style.display = 'none';
                 
-                ttTitle.textContent = planet.name;
-                ttInfo.textContent = planet.info;
-                ttFactionBadge.textContent = factionInfo.name;
-                ttFactionBadge.style.color = color;
-                
-                // Используем вторичный цвет для рамки окна информации
-                tooltip.style.borderColor = secondaryColor; 
-                
-                tooltip.style.left = `${e.pageX + 15}px`;
-                tooltip.style.top = `${e.pageY + 15}px`;
-                tooltip.style.display = 'block';
+                if (isRoutingMode) {
+                    handleRouteClick(planet);
+                } else {
+                    ttTitle.textContent = planet.name;
+                    ttInfo.textContent = planet.info;
+                    ttFactionBadge.textContent = factionInfo.name;
+                    ttFactionBadge.style.color = color;
+                    
+                    tooltip.style.borderColor = secondaryColor; 
+                    
+                    tooltip.style.left = `${e.pageX + 15}px`;
+                    tooltip.style.top = `${e.pageY + 15}px`;
+                    tooltip.style.display = 'block';
 
-                flyTo(absX, absY, scale);
+                    flyTo(absX, absY, scale);
+                }
             });
 
             group.appendChild(circle);
