@@ -1,8 +1,8 @@
 :root {
-    --bg-color: #03050a; /* Тёмный фон космоса */
-    --hud-bg: #1b1926; /* Основной цвет окон */
+    --bg-color: #03050a;
+    --hud-bg: #1b1926;        /* Основной цвет окон (непрозрачный) */
     --hud-secondary: #13121a; /* Вторичный цвет окон */
-    --hud-cyan: #0c85e2; /* Новый акцентный цвет */
+    --hud-cyan: #0c85e2;      /* Новый акцентный цвет */
     
     --rep-color: #ff3333;
     --cis-color: #3388ff;
@@ -38,18 +38,18 @@ svg {
 
 /* Элементы карты */
 .planet-circle { cursor: pointer; transition: r 0.1s; }
-.planet-circle:hover { r: 10; }
+.planet-circle:hover { r: 5; } /* Увеличивается при наведении, но базовый размер уменьшен */
 
 .planet-label {
     font-family: 'Orbitron', sans-serif;
-    font-size: 10px;
+    font-size: 5px; /* Размер названий уменьшен в 2 раза */
     fill: #ccc;
     pointer-events: none;
 }
 
 .connection {
-    /* Анимация и пунктир убраны, толщина уменьшена на 30% (с 2 до 1.4) */
-    stroke-width: 1.4;
+    /* Без анимации, сплошная линия, толщина уменьшена на 30% */
+    stroke-width: 1.4; 
 }
 
 /* UI HUD */
@@ -60,9 +60,10 @@ svg {
 
 .hud-panel {
     position: absolute; 
-    background: var(--hud-bg); /* Непрозрачный основной фон */
+    background: var(--hud-bg); 
     border: 1px solid var(--hud-cyan);
     padding: 15px; border-radius: 4px; pointer-events: auto;
+    /* Убраны любые тени (box-shadow) для исключения свечения */
 }
 
 .top-left { top: 20px; left: 20px; }
@@ -111,14 +112,15 @@ input {
 #tt-title { margin: 0; color: #ffffff; font-size: 16px; font-weight: normal; text-align: left; }
 #tt-faction-badge { font-size: 12px; font-weight: normal; text-align: left; margin-top: 4px; display: block; }
 
-.tt-divider { border: none; border-top: 1px solid rgba(255,255,255,0.2); margin: 6px 0; } /* Уменьшено расстояние в 2 раза */
+/* Расстояние уменьшено в половину (с 12-15px суммарно до 6px) */
+.tt-divider { border: none; border-top: 1px solid rgba(255,255,255,0.2); margin: 6px 0; }
 
 #tt-info { 
-    background-color: var(--hud-secondary); /* Дополнительный блок для описания */
+    background-color: var(--hud-secondary); 
     padding: 10px; 
     border-radius: 6px; 
     font-family: sans-serif; 
-    font-size: 12px; /* Уменьшен шрифт описания */
+    font-size: 11px; /* Немного уменьшен шрифт описания */
     line-height: 1.5; 
     color: #ccc; 
     margin: 0; 
