@@ -1,247 +1,203 @@
-const PLANETS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTVPQVMnjZWNBWkWkebK4aCnYi3PhsewOGOaxSLfx0Fj2ZYc6tYkSS4iNoV8tWKEj22YEn8ysYE6kgl/pub?gid=416114984&single=true&output=csv';
-const CONNECTIONS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTVPQVMnjZWNBWkWkebK4aCnYi3PhsewOGOaxSLfx0Fj2ZYc6tYkSS4iNoV8tWKEj22YEn8ysYE6kgl/pub?gid=1688125961&single=true&output=csv';
-
-const MAP_SIZE = 4000;
+// ВАЖНО: Вставьте ваши актуальные ссылки на опубликованные CSV файлы
+const PLANETS_CSV_URL = 'ВАША_ССЫЛКА_CSV_PLANETS';
+const CONNECTIONS_CSV_URL = 'ВАША_ССЫЛКА_CSV_CONNECTIONS';
 
 const svg = document.getElementById('starmap');
-const mapGroup = document.getElementById('map-group');
-const connectionsLayer = document.getElementById('connections-layer');
-const planetsLayer = document.getElementById('planets-layer');
-
 const tooltip = document.getElementById('tooltip');
-const hoverTooltip = document.getElementById('hover-tooltip');
 const ttTitle = document.getElementById('tt-title');
 const ttInfo = document.getElementById('tt-info');
-const ttFactionBadge = document.getElementById('tt-faction-badge');
-const coordX = document.getElementById('coord-x');
-const coordY = document.getElementById('coord-y');
-const zoomLevelText = document.getElementById('zoom-level');
+const mapContainer = document.getElementById('map-container');
+const routePanel = document.getElementById('route-panel');
+const btnToggleRoute = document.getElementById('btn-toggle-route');
 
-let scale = 1;
-let translateX = 0;
-let translateY = 0;
-let isDragging = false;
-let startX, startY;
+// Состояние карты и маршрутов
+let connectionsList = [];
+let isRoutingMode = false;
+let routeNodes = [];
+let routeLines = []; // Храним отрисованные линии маршрута
+let distType0 = 0;
+let distTypeColor = 0;
+let distOffPath = 0;
 
-let planetsList = [];
-let planetMap = {};
-
-function updateTransform() {
-    mapGroup.setAttribute('transform', `translate(${translateX}, ${translateY}) scale(${scale})`);
-    zoomLevelText.textContent = scale.toFixed(2);
-}
-
-function flyTo(x, y, targetScale = 2) {
-    const rect = svg.getBoundingClientRect();
-    const centerX = rect.width / 2;
-    const centerY = rect.height / 2;
-
-    const targetX = centerX - x * targetScale;
-    const targetY = centerY - y * targetScale;
-
-    let progress = 0;
-    const startTx = translateX, startTy = translateY, startS = scale;
-
-    function animate() {
-        progress += 0.05;
-        if (progress > 1) progress = 1;
-        
-        const ease = progress * progress * (3 - 2 * progress);
-
-        translateX = startTx + (targetX - startTx) * ease;
-        translateY = startTy + (targetY - startTy) * ease;
-        scale = startS + (targetScale - startS) * ease;
-        
-        updateTransform();
-
-        if (progress < 1) requestAnimationFrame(animate);
-    }
-    requestAnimationFrame(animate);
-}
-
-svg.addEventListener('mousedown', (e) => {
-    if (e.button !== 0) return; 
-    isDragging = true;
-    startX = e.clientX - translateX;
-    startY = e.clientY - translateY;
-});
-
-window.addEventListener('mousemove', (e) => {
-    const rect = svg.getBoundingClientRect();
-    const mapX = (e.clientX - rect.left - translateX) / scale;
-    const mapY = (e.clientY - rect.top - translateY) / scale;
-    coordX.textContent = Math.round(mapX).toString().padStart(4, '0');
-    coordY.textContent = Math.round(mapY).toString().padStart(4, '0');
-
-    if (!isDragging) return;
-    translateX = e.clientX - startX;
-    translateY = e.clientY - startY;
-    updateTransform();
-});
-
-window.addEventListener('mouseup', () => isDragging = false);
-
-svg.addEventListener('wheel', (e) => {
-    e.preventDefault();
-    const rect = svg.getBoundingClientRect();
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
-
-    const zoomFactor = Math.exp((e.deltaY < 0 ? 1 : -1) * 0.1);
-    let newScale = Math.max(0.1, Math.min(scale * zoomFactor, 8)); 
-    const actualZoomFactor = newScale / scale;
-
-    translateX = mouseX - (mouseX - translateX) * actualZoomFactor;
-    translateY = mouseY - (mouseY - translateY) * actualZoomFactor;
-    scale = newScale;
-    updateTransform();
-}, { passive: false });
-
-document.getElementById('btn-zoom-in').onclick = () => flyTo((window.innerWidth/2 - translateX)/scale, (window.innerHeight/2 - translateY)/scale, scale * 1.5);
-document.getElementById('btn-zoom-out').onclick = () => flyTo((window.innerWidth/2 - translateX)/scale, (window.innerHeight/2 - translateY)/scale, scale / 1.5);
-document.getElementById('btn-reset').onclick = () => flyTo(MAP_SIZE/2, MAP_SIZE/2, 0.5);
-
+// Чтение CSV
 function fetchCSV(url) {
     return new Promise((resolve, reject) => {
-        Papa.parse(url, { download: true, header: true, complete: results => resolve(results.data), error: err => reject(err) });
+        Papa.parse(url, {
+            download: true,
+            header: true,
+            complete: results => resolve(results.data),
+            error: err => reject(err)
+        });
     });
 }
 
+// Евклидово расстояние
+function calculateDistance(p1, p2) {
+    const dx = parseFloat(p1.x) - parseFloat(p2.x);
+    const dy = parseFloat(p1.y) - parseFloat(p2.y);
+    return Math.sqrt(dx * dx + dy * dy);
+}
+
+// Обновление интерфейса маршрутизатора
+function updateRouteUI() {
+    document.getElementById('route-dist-0').textContent = distType0.toFixed(1);
+    document.getElementById('route-dist-color').textContent = distTypeColor.toFixed(1);
+    document.getElementById('route-dist-off').textContent = distOffPath.toFixed(1);
+    document.getElementById('route-points').textContent = routeNodes.length;
+}
+
+// Сброс маршрута
+function resetRoute() {
+    routeNodes = [];
+    distType0 = 0;
+    distTypeColor = 0;
+    distOffPath = 0;
+    updateRouteUI();
+    
+    // Удаляем временные линии маршрута с карты
+    routeLines.forEach(line => line.remove());
+    routeLines = [];
+}
+
+// Управление кнопками
+btnToggleRoute.addEventListener('click', () => {
+    isRoutingMode = !isRoutingMode;
+    routePanel.style.display = isRoutingMode ? 'block' : 'none';
+    btnToggleRoute.style.backgroundColor = isRoutingMode ? '#2b303b' : '#181a20';
+    
+    if (isRoutingMode) {
+        mapContainer.classList.add('routing-mode-active');
+    } else {
+        mapContainer.classList.remove('routing-mode-active');
+        resetRoute();
+    }
+});
+
+document.getElementById('btn-reset-route').addEventListener('click', resetRoute);
+
+// Отрисовка временной линии
+function drawRouteLine(p1, p2) {
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('x1', `${p1.x}%`);
+    line.setAttribute('y1', `${p1.y}%`);
+    line.setAttribute('x2', `${p2.x}%`);
+    line.setAttribute('y2', `${p2.y}%`);
+    line.setAttribute('class', 'route-line');
+    svg.appendChild(line);
+    routeLines.push(line);
+}
+
+// Основная логика инициализации
 async function initMap() {
     try {
-        const [planetsData, connectionsData] = await Promise.all([fetchCSV(PLANETS_CSV_URL), fetchCSV(CONNECTIONS_CSV_URL)]);
-        planetsList = planetsData.filter(p => p.id);
-        const connections = connectionsData.filter(c => c.from && c.to);
-        
-        planetsList.forEach(p => planetMap[p.id] = p);
+        const [planetsData, connectionsData] = await Promise.all([
+            fetchCSV(PLANETS_CSV_URL),
+            fetchCSV(CONNECTIONS_CSV_URL)
+        ]);
 
-        translateX = window.innerWidth / 2 - (MAP_SIZE / 2) * 0.3;
-        translateY = window.innerHeight / 2 - (MAP_SIZE / 2) * 0.3;
-        scale = 0.3;
-        updateTransform();
+        const planets = planetsData.filter(p => p.id);
+        connectionsList = connectionsData.filter(c => c.from && c.to);
 
-        connections.forEach(conn => {
+        const planetMap = {};
+        planets.forEach(p => { planetMap[p.id] = p; });
+
+        // 1. Отрисовка базовых линий связей
+        connectionsList.forEach(conn => {
             const p1 = planetMap[conn.from];
             const p2 = planetMap[conn.to];
-            const routeType = Object.values(conn)[2]; 
-            
+
             if (p1 && p2) {
                 const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                line.setAttribute('x1', (p1.x / 100) * MAP_SIZE);
-                line.setAttribute('y1', (p1.y / 100) * MAP_SIZE);
-                line.setAttribute('x2', (p2.x / 100) * MAP_SIZE);
-                line.setAttribute('y2', (p2.y / 100) * MAP_SIZE);
+                line.setAttribute('x1', `${p1.x}%`);
+                line.setAttribute('y1', `${p1.y}%`);
+                line.setAttribute('x2', `${p2.x}%`);
+                line.setAttribute('y2', `${p2.y}%`);
                 line.setAttribute('class', 'connection');
-                
-                let routeColor = '#626465'; 
-                if (routeType === 'V') routeColor = '#8a2be2'; 
-                else if (routeType === 'G') routeColor = '#2ecc71'; 
-                else if (routeType === 'Y') routeColor = '#f1c40f'; 
-                else if (routeType === 'R') routeColor = '#e74c3c'; 
-                else if (routeType === 'B') routeColor = '#3498db'; 
-                
-                line.style.stroke = routeColor;
-                connectionsLayer.appendChild(line);
+                // Если нужно раскрашивать дороги на карте, можно добавлять классы на основе conn.type
+                svg.appendChild(line);
             }
         });
 
-        planetsList.forEach(planet => {
-            const absX = (planet.x / 100) * MAP_SIZE;
-            const absY = (planet.y / 100) * MAP_SIZE;
-
-            const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-            
-            // Подтягиваем данные из factionsData
-            const factionInfo = factionsData[planet.faction] || factionsData["Нейтральные Системы"];
-            const color = factionInfo.mainColor;
-            const secondaryColor = factionInfo.secondaryColor;
-
-            const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-            circle.setAttribute('cx', absX);
-            circle.setAttribute('cy', absY);
-            circle.setAttribute('r', 2.75); 
-            circle.setAttribute('fill', color);
-            circle.setAttribute('class', 'planet-circle');
-
+        // 2. Отрисовка планет
+        planets.forEach(planet => {
             const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-            text.textContent = planet.name;
-            text.setAttribute('x', absX);
-            text.setAttribute('y', absY + 9); 
+            text.textContent = '✦';
+            text.setAttribute('x', `${planet.x}%`);
+            text.setAttribute('y', `${planet.y}%`);
             text.setAttribute('text-anchor', 'middle');
-            text.setAttribute('class', 'planet-label');
+            text.setAttribute('dominant-baseline', 'central');
+            text.setAttribute('class', 'planet');
 
-            circle.addEventListener('mouseover', (e) => {
-                hoverTooltip.textContent = planet.name; 
-                hoverTooltip.style.left = `${e.pageX + 15}px`;
-                hoverTooltip.style.top = `${e.pageY - 25}px`;
-                hoverTooltip.style.borderColor = color;
-                hoverTooltip.style.display = 'block';
-            });
-
-            circle.addEventListener('mouseout', () => hoverTooltip.style.display = 'none');
-
-            circle.addEventListener('click', (e) => {
+            // Обработка клика
+            text.addEventListener('click', (e) => {
                 e.stopPropagation();
-                hoverTooltip.style.display = 'none';
-                
-                ttTitle.textContent = planet.name;
-                ttInfo.textContent = planet.info;
-                ttFactionBadge.textContent = factionInfo.name;
-                ttFactionBadge.style.color = color;
-                
-                // Используем вторичный цвет для рамки окна информации
-                tooltip.style.borderColor = secondaryColor; 
-                
-                tooltip.style.left = `${e.pageX + 15}px`;
-                tooltip.style.top = `${e.pageY + 15}px`;
-                tooltip.style.display = 'block';
 
-                flyTo(absX, absY, scale);
+                if (isRoutingMode) {
+                    // --- ЛОГИКА МАРШРУТИЗАЦИИ ---
+                    if (routeNodes.length === 0) {
+                        routeNodes.push(planet);
+                        updateRouteUI();
+                        return;
+                    }
+
+                    const lastNode = routeNodes[routeNodes.length - 1];
+                    
+                    // Ищем связь
+                    const connection = connectionsList.find(c => 
+                        (c.from == lastNode.id && c.to == planet.id) || 
+                        (c.to == lastNode.id && c.from == planet.id)
+                    );
+
+                    // Проверяем, есть ли у целевого мира пути вообще
+                    const targetHasAnyConnections = connectionsList.some(c => 
+                        c.from == planet.id || c.to == planet.id
+                    );
+
+                    // Условие: путь есть ИЛИ целевой мир полностью изолирован
+                    if (connection || !targetHasAnyConnections) {
+                        const dist = calculateDistance(lastNode, planet);
+                        
+                        if (connection) {
+                            // Проверка типа пути (если тип не указан, считаем его '0' по умолчанию)
+                            const pathType = connection.type || '0';
+                            
+                            if (pathType === '0') {
+                                distType0 += dist;
+                            } else if (['V', 'G', 'Y', 'R', 'B'].includes(pathType)) {
+                                distTypeColor += dist;
+                            }
+                        } else if (!targetHasAnyConnections) {
+                            distOffPath += dist;
+                        }
+
+                        routeNodes.push(planet);
+                        updateRouteUI();
+                        drawRouteLine(lastNode, planet);
+                    }
+                } else {
+                    // --- ЛОГИКА ИНФОРМАЦИОННОГО ОКНА ---
+                    ttTitle.textContent = planet.name;
+                    ttInfo.textContent = planet.info;
+                    
+                    tooltip.style.left = `${e.pageX + 15}px`;
+                    tooltip.style.top = `${e.pageY + 15}px`;
+                    tooltip.style.display = 'block';
+                }
             });
 
-            group.appendChild(circle);
-            group.appendChild(text);
-            planetsLayer.appendChild(group);
+            svg.appendChild(text);
         });
 
-        svg.addEventListener('click', () => tooltip.style.display = 'none');
-        setupSearch();
+        // Закрываем окно при клике на пустое место
+        svg.addEventListener('click', () => {
+            if (!isRoutingMode) {
+                tooltip.style.display = 'none';
+            }
+        });
 
     } catch (error) {
         console.error("Ошибка при загрузке данных:", error);
     }
-}
-
-function setupSearch() {
-    const searchInput = document.getElementById('planet-search');
-    const resultsDiv = document.getElementById('search-results');
-
-    searchInput.addEventListener('input', (e) => {
-        const val = e.target.value.toLowerCase();
-        resultsDiv.innerHTML = '';
-        if (!val) { resultsDiv.style.display = 'none'; return; }
-
-        const matches = planetsList.filter(p => p.name.toLowerCase().includes(val));
-        
-        if (matches.length > 0) {
-            resultsDiv.style.display = 'block';
-            matches.forEach(match => {
-                const div = document.createElement('div');
-                div.className = 'search-item';
-                div.textContent = match.name;
-                div.onclick = () => {
-                    searchInput.value = '';
-                    resultsDiv.style.display = 'none';
-                    const absX = (match.x / 100) * MAP_SIZE;
-                    const absY = (match.y / 100) * MAP_SIZE;
-                    flyTo(absX, absY, 3);
-                };
-                resultsDiv.appendChild(div);
-            });
-        } else {
-            resultsDiv.style.display = 'none';
-        }
-    });
 }
 
 initMap();
