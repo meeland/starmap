@@ -124,7 +124,7 @@ async function initMap() {
             const p1 = planetMap[conn.from];
             const p2 = planetMap[conn.to];
             
-            // Получаем значение из 3-го столбца (Столбец C)
+            // Получаем значение из 3-го столбца таблицы связей
             const routeType = Object.values(conn)[2]; 
             
             if (p1 && p2) {
@@ -135,15 +135,15 @@ async function initMap() {
                 line.setAttribute('y2', (p2.y / 100) * MAP_SIZE);
                 line.setAttribute('class', 'connection');
                 
-                // Назначаем цвет в зависимости от буквы
-                let routeColor = 'rgba(150, 150, 150, 0.4)'; // По умолчанию 0 (серый)
-                if (routeType === 'V') routeColor = 'rgba(138, 43, 226, 0.7)'; // Фиолетовый
-                else if (routeType === 'G') routeColor = 'rgba(46, 204, 113, 0.7)'; // Зеленый
-                else if (routeType === 'Y') routeColor = 'rgba(241, 196, 15, 0.7)'; // Желтый
-                else if (routeType === 'R') routeColor = 'rgba(231, 76, 60, 0.7)'; // Красный
-                else if (routeType === 'B') routeColor = 'rgba(52, 152, 219, 0.7)'; // Голубой
+                // Назначаем цвет маршрута
+                let routeColor = '#626465'; // 0 - серый
+                if (routeType === 'V') routeColor = '#8a2be2'; // Фиолетовый
+                else if (routeType === 'G') routeColor = '#2ecc71'; // Зеленый
+                else if (routeType === 'Y') routeColor = '#f1c40f'; // Желтый
+                else if (routeType === 'R') routeColor = '#e74c3c'; // Красный
+                else if (routeType === 'B') routeColor = '#3498db'; // Голубой
                 
-                line.style.stroke = routeColor; // Применяем цвет напрямую к элементу
+                line.style.stroke = routeColor;
                 connectionsLayer.appendChild(line);
             }
         });
@@ -155,30 +155,29 @@ async function initMap() {
             const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
             
             let color = '#a0a0a0';
-            let badgeColor = '#a0a0a0';
 
             if (planet.faction === 'Галактическая Республика') {
-                color = '#ff3333'; badgeColor = '#551111';
+                color = '#ff3333';
             } else if (planet.faction === 'Конфедерация Независимых Систем') {
-                color = '#3388ff'; badgeColor = '#112255';
+                color = '#3388ff';
             }
 
             const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
             circle.setAttribute('cx', absX);
             circle.setAttribute('cy', absY);
-            circle.setAttribute('r', 5.5); // Уменьшено на 30% (было 8)
+            circle.setAttribute('r', 5.5); 
             circle.setAttribute('fill', color);
             circle.setAttribute('class', 'planet-circle');
 
             const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
             text.textContent = planet.name;
             text.setAttribute('x', absX);
-            text.setAttribute('y', absY + 18); // Опущено пропорционально новому размеру планеты
+            text.setAttribute('y', absY + 18); 
             text.setAttribute('text-anchor', 'middle');
             text.setAttribute('class', 'planet-label');
 
             circle.addEventListener('mouseover', (e) => {
-                hoverTooltip.textContent = planet.name; // Только название
+                hoverTooltip.textContent = planet.name; 
                 hoverTooltip.style.left = `${e.pageX + 15}px`;
                 hoverTooltip.style.top = `${e.pageY - 25}px`;
                 hoverTooltip.style.borderColor = color;
@@ -192,10 +191,8 @@ async function initMap() {
                 hoverTooltip.style.display = 'none';
                 
                 ttTitle.textContent = planet.name;
-                ttTitle.style.color = color;
                 ttInfo.textContent = planet.info;
-                
-                ttFactionBadge.textContent = planet.faction || 'Нейтрально';
+                ttFactionBadge.textContent = planet.faction || 'Нейтральный мир';
                 ttFactionBadge.style.color = color;
                 
                 tooltip.style.left = `${e.pageX + 15}px`;
@@ -251,5 +248,3 @@ function setupSearch() {
 }
 
 initMap();
-
-
