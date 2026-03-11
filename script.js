@@ -123,6 +123,10 @@ async function initMap() {
         connections.forEach(conn => {
             const p1 = planetMap[conn.from];
             const p2 = planetMap[conn.to];
+            
+            // Получаем значение из 3-го столбца (Столбец C)
+            const routeType = Object.values(conn)[2]; 
+            
             if (p1 && p2) {
                 const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
                 line.setAttribute('x1', (p1.x / 100) * MAP_SIZE);
@@ -130,6 +134,16 @@ async function initMap() {
                 line.setAttribute('x2', (p2.x / 100) * MAP_SIZE);
                 line.setAttribute('y2', (p2.y / 100) * MAP_SIZE);
                 line.setAttribute('class', 'connection');
+                
+                // Назначаем цвет в зависимости от буквы
+                let routeColor = 'rgba(150, 150, 150, 0.4)'; // По умолчанию 0 (серый)
+                if (routeType === 'V') routeColor = 'rgba(138, 43, 226, 0.7)'; // Фиолетовый
+                else if (routeType === 'G') routeColor = 'rgba(46, 204, 113, 0.7)'; // Зеленый
+                else if (routeType === 'Y') routeColor = 'rgba(241, 196, 15, 0.7)'; // Желтый
+                else if (routeType === 'R') routeColor = 'rgba(231, 76, 60, 0.7)'; // Красный
+                else if (routeType === 'B') routeColor = 'rgba(52, 152, 219, 0.7)'; // Голубой
+                
+                line.style.stroke = routeColor; // Применяем цвет напрямую к элементу
                 connectionsLayer.appendChild(line);
             }
         });
@@ -238,3 +252,4 @@ function setupSearch() {
 }
 
 initMap();
+
