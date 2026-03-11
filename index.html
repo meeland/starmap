@@ -18,23 +18,36 @@
             width: 100vw;
             height: 100vh;
             position: relative;
+            cursor: grab; /* Показываем, что карту можно таскать */
+        }
+
+        #map-container:active {
+            cursor: grabbing; /* Курсор при зажатии */
         }
 
         svg {
             width: 100%;
             height: 100%;
+            display: block;
+        }
+
+        /* Стили для сетки */
+        .grid-line {
+            stroke: #1a2639;
+            stroke-width: 1;
+            opacity: 0.5;
         }
 
         .planet {
-            fill: #e0e0e0;
             font-size: 24px;
             cursor: pointer;
             user-select: none;
-            transition: fill 0.2s;
+            transition: filter 0.2s;
         }
 
+        /* Динамическое свечение, цвет зависит от фракции (currentColor) */
         .planet:hover {
-            fill: #4db8ff;
+            filter: brightness(1.5) drop-shadow(0 0 8px currentColor);
         }
 
         .connection {
@@ -43,14 +56,14 @@
             opacity: 0.6;
         }
 
-        /* Стили всплывающего окна */
+        /* Стили окна при клике */
         #tooltip {
             position: absolute;
             background: rgba(15, 25, 40, 0.95);
             border: 1px solid #4db8ff;
             padding: 15px;
             border-radius: 8px;
-            pointer-events: none; /* Чтобы окно не перехватывало клики */
+            pointer-events: none;
             display: none;
             max-width: 250px;
             box-shadow: 0 0 15px rgba(77, 184, 255, 0.2);
@@ -59,20 +72,38 @@
 
         #tooltip h3 {
             margin: 0 0 10px 0;
-            color: #4db8ff;
+        }
+
+        /* Стили окна при простом наведении */
+        #hover-tooltip {
+            position: absolute;
+            background: rgba(10, 15, 25, 0.9);
+            border: 1px solid #7788aa;
+            padding: 5px 10px;
+            border-radius: 4px;
+            pointer-events: none;
+            display: none;
+            font-size: 14px;
+            z-index: 5;
+            white-space: nowrap;
         }
     </style>
 </head>
 <body>
 
     <div id="map-container">
-        <svg id="starmap"></svg>
+        <svg id="starmap">
+            <g id="map-group"></g>
+        </svg>
     </div>
 
     <div id="tooltip">
         <h3 id="tt-title">Название</h3>
         <p id="tt-info">Информация</p>
+        <p id="tt-faction" style="font-size: 12px; margin-top: 10px; opacity: 0.8;"></p>
     </div>
+    
+    <div id="hover-tooltip">Название</div>
 
     <script src="script.js"></script>
 </body>
