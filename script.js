@@ -194,10 +194,9 @@ async function initMap() {
                 ttTitle.textContent = planet.name;
                 ttTitle.style.color = color;
                 ttInfo.textContent = planet.info;
+                
                 ttFactionBadge.textContent = planet.faction || 'Нейтрально';
-                ttFactionBadge.style.backgroundColor = badgeColor;
                 ttFactionBadge.style.color = color;
-                ttFactionBadge.style.border = `1px solid ${color}`;
                 
                 tooltip.style.left = `${e.pageX + 15}px`;
                 tooltip.style.top = `${e.pageY + 15}px`;
@@ -252,4 +251,5 @@ function setupSearch() {
 }
 
 initMap();
+
 
