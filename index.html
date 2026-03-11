@@ -43,7 +43,22 @@
         <svg id="starmap">
             <defs>
                 <pattern id="grid-pattern" width="100" height="100" patternUnits="userSpaceOnUse">
-                    <path d="M 100 0 L 0 0 0 100" fill="none" stroke="rgba(77, 184, 255, 0.15)" stroke-width="1"/>
+                    <g fill="#626465">
+                        <rect x="0" y="0" width="5" height="1" />   <rect x="96" y="0" width="4" height="1" />  <rect x="0" y="0" width="1" height="5" />   <rect x="0" y="96" width="1" height="4" />  <rect x="20" y="0" width="1" height="1" />
+                        <rect x="40" y="0" width="1" height="1" />
+                        <rect x="60" y="0" width="1" height="1" />
+                        <rect x="80" y="0" width="1" height="1" />
+
+                        <rect x="0" y="20" width="1" height="1" />
+                        <rect x="0" y="40" width="1" height="1" />
+                        <rect x="0" y="60" width="1" height="1" />
+                        <rect x="0" y="80" width="1" height="1" />
+
+                        <rect x="20" y="20" width="1" height="1" /><rect x="40" y="20" width="1" height="1" /><rect x="60" y="20" width="1" height="1" /><rect x="80" y="20" width="1" height="1" />
+                        <rect x="20" y="40" width="1" height="1" /><rect x="40" y="40" width="1" height="1" /><rect x="60" y="40" width="1" height="1" /><rect x="80" y="40" width="1" height="1" />
+                        <rect x="20" y="60" width="1" height="1" /><rect x="40" y="60" width="1" height="1" /><rect x="60" y="60" width="1" height="1" /><rect x="80" y="60" width="1" height="1" />
+                        <rect x="20" y="80" width="1" height="1" /><rect x="40" y="80" width="1" height="1" /><rect x="60" y="80" width="1" height="1" /><rect x="80" y="80" width="1" height="1" />
+                    </g>
                 </pattern>
             </defs>
 
@@ -62,7 +77,7 @@
         <div id="tt-title">Название</div>
         <div id="tt-faction-badge">Фракция</div>
         <hr class="tt-divider">
-        <p id="tt-info">Информация</p>
+        <div id="tt-info">Информация</div>
     </div>
     
     <div id="hover-tooltip">Название</div>
@@ -70,5 +85,3 @@
     <script src="script.js"></script>
 </body>
 </html>
-
-
