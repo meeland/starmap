@@ -24,13 +24,17 @@
             </div>
         </div>
 
+        <button id="btn-toggle-route">ПОСТРОИТЬ МАРШРУТ</button>
+
         <div id="route-panel">
-            <div class="route-header">МАРШРУТИЗАТОР</div>
-            <div class="route-stat">Пути '0': <span id="route-dist-0">0</span></div>
-            <div class="route-stat">Цветные (V,G,Y,R,B): <span id="route-dist-color">0</span></div>
-            <div class="route-stat">Вне путей: <span id="route-dist-off">0</span></div>
-            <div class="route-stat">Точек: <span id="route-points">0</span></div>
-            <button id="btn-reset-route">СБРОС</button>
+            <div class="route-panel-content">
+                <div class="route-header">МАРШРУТИЗАТОР</div>
+                <div class="route-stat">Региональные пути: <span id="route-dist-0">0</span></div>
+                <div class="route-stat">Магистральные пути: <span id="route-dist-color">0</span></div>
+                <div class="route-stat">Вне путей: <span id="route-dist-off">0</span></div>
+                <div class="route-stat">Точек маршрута: <span id="route-points">0</span></div>
+                <button id="btn-reset-route">СБРОС</button>
+            </div>
         </div>
 
         <div class="hud-panel bottom-right">
@@ -38,7 +42,6 @@
                 <button id="btn-zoom-in">+</button>
                 <button id="btn-zoom-out">-</button>
                 <button id="btn-reset">⌂</button>
-                <button id="btn-toggle-route" style="width: auto; padding: 0 10px; font-size: 12px;">МАРШРУТ</button>
             </div>
             <div class="telemetry">
                 <div>МАСШТАБ: <span id="zoom-level">1.00</span>x</div>
@@ -71,7 +74,8 @@
                 <rect x="0" y="0" width="4000" height="4000" fill="url(#grid-pattern)"></rect>
                 <text x="20" y="60" font-family="Orbitron" font-size="38" fill="rgba(150, 150, 150, 0.15)" font-weight="bold" letter-spacing="8">FALLEN REPUBLIC</text>
                 <g id="connections-layer"></g>
-                <g id="route-visual-layer"></g> <g id="planets-layer"></g>
+                <g id="route-visual-layer"></g>
+                <g id="planets-layer"></g>
             </g>
         </svg>
     </div>
