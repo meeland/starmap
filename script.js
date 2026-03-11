@@ -123,7 +123,6 @@ async function initMap() {
         connections.forEach(conn => {
             const p1 = planetMap[conn.from];
             const p2 = planetMap[conn.to];
-            
             const routeType = Object.values(conn)[2]; 
             
             if (p1 && p2) {
@@ -152,25 +151,22 @@ async function initMap() {
 
             const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
             
-            let color = '#a0a0a0';
-
-            if (planet.faction === 'Галактическая Республика') {
-                color = '#ff3333';
-            } else if (planet.faction === 'Конфедерация Независимых Систем') {
-                color = '#3388ff';
-            }
+            // Подтягиваем данные из factionsData
+            const factionInfo = factionsData[planet.faction] || factionsData["Нейтральные Системы"];
+            const color = factionInfo.mainColor;
+            const secondaryColor = factionInfo.secondaryColor;
 
             const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
             circle.setAttribute('cx', absX);
             circle.setAttribute('cy', absY);
-            circle.setAttribute('r', 2.75); // Размер миров уменьшен в 2 раза
+            circle.setAttribute('r', 2.75); 
             circle.setAttribute('fill', color);
             circle.setAttribute('class', 'planet-circle');
 
             const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
             text.textContent = planet.name;
             text.setAttribute('x', absX);
-            text.setAttribute('y', absY + 9); // Скорректирован отступ текста из-за уменьшения радиуса
+            text.setAttribute('y', absY + 9); 
             text.setAttribute('text-anchor', 'middle');
             text.setAttribute('class', 'planet-label');
 
@@ -190,8 +186,11 @@ async function initMap() {
                 
                 ttTitle.textContent = planet.name;
                 ttInfo.textContent = planet.info;
-                ttFactionBadge.textContent = planet.faction || 'Нейтральный мир';
+                ttFactionBadge.textContent = factionInfo.name;
                 ttFactionBadge.style.color = color;
+                
+                // Используем вторичный цвет для рамки окна информации
+                tooltip.style.borderColor = secondaryColor; 
                 
                 tooltip.style.left = `${e.pageX + 15}px`;
                 tooltip.style.top = `${e.pageY + 15}px`;
