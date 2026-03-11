@@ -124,7 +124,6 @@ async function initMap() {
             const p1 = planetMap[conn.from];
             const p2 = planetMap[conn.to];
             
-            // Получаем значение из 3-го столбца таблицы связей
             const routeType = Object.values(conn)[2]; 
             
             if (p1 && p2) {
@@ -135,13 +134,12 @@ async function initMap() {
                 line.setAttribute('y2', (p2.y / 100) * MAP_SIZE);
                 line.setAttribute('class', 'connection');
                 
-                // Назначаем цвет маршрута
-                let routeColor = '#626465'; // 0 - серый
-                if (routeType === 'V') routeColor = '#8a2be2'; // Фиолетовый
-                else if (routeType === 'G') routeColor = '#2ecc71'; // Зеленый
-                else if (routeType === 'Y') routeColor = '#f1c40f'; // Желтый
-                else if (routeType === 'R') routeColor = '#e74c3c'; // Красный
-                else if (routeType === 'B') routeColor = '#3498db'; // Голубой
+                let routeColor = '#626465'; 
+                if (routeType === 'V') routeColor = '#8a2be2'; 
+                else if (routeType === 'G') routeColor = '#2ecc71'; 
+                else if (routeType === 'Y') routeColor = '#f1c40f'; 
+                else if (routeType === 'R') routeColor = '#e74c3c'; 
+                else if (routeType === 'B') routeColor = '#3498db'; 
                 
                 line.style.stroke = routeColor;
                 connectionsLayer.appendChild(line);
@@ -165,14 +163,14 @@ async function initMap() {
             const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
             circle.setAttribute('cx', absX);
             circle.setAttribute('cy', absY);
-            circle.setAttribute('r', 5.5); 
+            circle.setAttribute('r', 2.75); // Размер миров уменьшен в 2 раза
             circle.setAttribute('fill', color);
             circle.setAttribute('class', 'planet-circle');
 
             const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
             text.textContent = planet.name;
             text.setAttribute('x', absX);
-            text.setAttribute('y', absY + 18); 
+            text.setAttribute('y', absY + 9); // Скорректирован отступ текста из-за уменьшения радиуса
             text.setAttribute('text-anchor', 'middle');
             text.setAttribute('class', 'planet-label');
 
