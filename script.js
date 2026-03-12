@@ -8,7 +8,7 @@ const mapGroup = document.getElementById('map-group');
 const connectionsLayer = document.getElementById('connections-layer');
 const routeVisualLayer = document.getElementById('route-visual-layer');
 const planetsLayer = document.getElementById('planets-layer');
-const voronoiLayer = document.getElementById('voronoi-layer'); // Новый слой
+const voronoiLayer = document.getElementById('voronoi-layer'); 
 
 const tooltip = document.getElementById('tooltip');
 const hoverTooltip = document.getElementById('hover-tooltip');
@@ -27,11 +27,33 @@ let planetsList = [];
 let planetMap = {};
 let globalConnections = []; 
 
-// Переменные маршрутизатора
 let isRoutingMode = false;
 let routeNodes = [];
 let routeVisualElements = []; 
 let d0 = 0, dColor = 0, dOff = 0;
+
+// Универсальный резервный цвет, если фракция не найдена
+const fallbackFaction = { name: "Неизвестно", mainColor: "#ffffff", secondaryColor: "#555555" };
+
+// Автоматическая генерация легенды из faction.js
+function buildLegend() {
+    const legendContainer = document.getElementById('faction-legend');
+    legendContainer.innerHTML = ''; 
+
+    Object.values(factionsData).forEach(faction => {
+        const item = document.createElement('div');
+        item.className = 'legend-item';
+        
+        const colorBox = document.createElement('span');
+        colorBox.className = 'color-box';
+        colorBox.style.backgroundColor = faction.mainColor;
+        
+        item.appendChild(colorBox);
+        item.appendChild(document.createTextNode(' ' + faction.name));
+        
+        legendContainer.appendChild(item);
+    });
+}
 
 // Управление слоями
 const btnLayerBare = document.getElementById('btn-layer-bare');
@@ -223,6 +245,8 @@ function fetchCSV(url) {
 
 async function initMap() {
     try {
+        buildLegend(); // Генерируем легенду перед загрузкой данных
+
         const [planetsData, connectionsData] = await Promise.all([fetchCSV(PLANETS_CSV_URL), fetchCSV(CONNECTIONS_CSV_URL)]);
         planetsList = planetsData.filter(p => p.id);
         globalConnections = connectionsData.filter(c => c.from && c.to);
@@ -234,16 +258,16 @@ async function initMap() {
         scale = 0.3;
         updateTransform();
 
-        // 1. Построение диаграммы Вороного
         const points = planetsList.map(p => [(p.x / 100) * MAP_SIZE, (p.y / 100) * MAP_SIZE]);
         const delaunay = d3.Delaunay.from(points);
-        // Ограничиваем полигоны размерами карты
         const voronoi = delaunay.voronoi([0, 0, MAP_SIZE, MAP_SIZE]);
 
         planetsList.forEach((planet, i) => {
             const pathData = voronoi.renderCell(i);
             if (pathData) {
-                const factionInfo = factionsData[planet.faction] || factionsData["Нейтральные Системы"];
+                // Если фракция из CSV не найдена, используем fallback
+                const factionInfo = factionsData[planet.faction] || fallbackFaction;
+                
                 const cell = document.createElementNS('http://www.w3.org/2000/svg', 'path');
                 cell.setAttribute('d', pathData);
                 cell.setAttribute('class', 'voronoi-cell');
@@ -253,7 +277,6 @@ async function initMap() {
             }
         });
 
-        // 2. Отрисовка связей
         globalConnections.forEach(conn => {
             const p1 = planetMap[conn.from];
             const p2 = planetMap[conn.to];
@@ -279,14 +302,13 @@ async function initMap() {
             }
         });
 
-        // 3. Отрисовка планет
         planetsList.forEach(planet => {
             const absX = (planet.x / 100) * MAP_SIZE;
             const absY = (planet.y / 100) * MAP_SIZE;
 
             const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
             
-            const factionInfo = factionsData[planet.faction] || factionsData["Нейтральные Системы"];
+            const factionInfo = factionsData[planet.faction] || fallbackFaction;
             const color = factionInfo.mainColor;
             const secondaryColor = factionInfo.secondaryColor;
 
