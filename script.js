@@ -32,9 +32,6 @@ let routeNodes = [];
 let routeVisualElements = []; 
 let d0 = 0, dColor = 0, dOff = 0;
 
-// Универсальный резервный цвет, если фракция не найдена
-const fallbackFaction = { name: "Неизвестно", mainColor: "#ffffff", secondaryColor: "#555555" };
-
 // Автоматическая генерация легенды из faction.js
 function buildLegend() {
     const legendContainer = document.getElementById('faction-legend');
@@ -245,12 +242,25 @@ function fetchCSV(url) {
 
 async function initMap() {
     try {
-        buildLegend(); // Генерируем легенду перед загрузкой данных
+        buildLegend();
 
         const [planetsData, connectionsData] = await Promise.all([fetchCSV(PLANETS_CSV_URL), fetchCSV(CONNECTIONS_CSV_URL)]);
-        planetsList = planetsData.filter(p => p.id);
-        globalConnections = connectionsData.filter(c => c.from && c.to);
         
+        // НОРМАЛИЗАЦИЯ ДАННЫХ
+        planetsList = planetsData.filter(p => p.id).map(p => {
+            // Убираем лишние пробелы по краям, если они есть
+            let factionName = p.faction ? p.faction.trim() : "";
+            
+            // Если ячейка пустая, или в ней мусор, или фракции нет в faction.js - делаем нейтральной
+            if (!factionName || !factionsData[factionName]) {
+                p.faction = "Нейтральные Системы";
+            } else {
+                p.faction = factionName;
+            }
+            return p;
+        });
+
+        globalConnections = connectionsData.filter(c => c.from && c.to);
         planetsList.forEach(p => planetMap[p.id] = p);
 
         translateX = window.innerWidth / 2 - (MAP_SIZE / 2) * 0.3;
@@ -265,8 +275,8 @@ async function initMap() {
         planetsList.forEach((planet, i) => {
             const pathData = voronoi.renderCell(i);
             if (pathData) {
-                // Если фракция из CSV не найдена, используем fallback
-                const factionInfo = factionsData[planet.faction] || fallbackFaction;
+                // Теперь мы на 100% уверены, что factionsData[planet.faction] существует
+                const factionInfo = factionsData[planet.faction];
                 
                 const cell = document.createElementNS('http://www.w3.org/2000/svg', 'path');
                 cell.setAttribute('d', pathData);
@@ -308,7 +318,8 @@ async function initMap() {
 
             const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
             
-            const factionInfo = factionsData[planet.faction] || fallbackFaction;
+            // Запрашиваем информацию о фракции без fallback-ов
+            const factionInfo = factionsData[planet.faction];
             const color = factionInfo.mainColor;
             const secondaryColor = factionInfo.secondaryColor;
 
