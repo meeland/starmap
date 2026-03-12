@@ -6,6 +6,7 @@
     <title>Звездная Карта</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -17,7 +18,12 @@
             <div class="legend-item"><span class="color-box neu"></span> Нейтральные Системы</div>
         </div>
 
-        <div class="hud-panel top-right">
+        <div class="hud-panel top-right" style="display: flex; gap: 15px; align-items: center; padding: 10px 15px;">
+            <div class="layer-controls">
+                <button id="btn-layer-bare" class="layer-btn active" title="Голый слой">◯</button>
+                <button id="btn-layer-pol" class="layer-btn" title="Политический слой">♔</button>
+            </div>
+            
             <div class="search-box">
                 <input type="text" id="planet-search" placeholder="Поиск системы..." autocomplete="off">
                 <div id="search-results"></div>
@@ -73,6 +79,8 @@
             <g id="map-group">
                 <rect x="0" y="0" width="4000" height="4000" fill="url(#grid-pattern)"></rect>
                 <text x="20" y="60" font-family="Orbitron" font-size="38" fill="rgba(150, 150, 150, 0.15)" font-weight="bold" letter-spacing="8">FALLEN REPUBLIC</text>
+                
+                <g id="voronoi-layer" style="display: none;"></g>
                 <g id="connections-layer"></g>
                 <g id="route-visual-layer"></g>
                 <g id="planets-layer"></g>
