@@ -275,14 +275,22 @@ async function initMap() {
         planetsList.forEach((planet, i) => {
             const pathData = voronoi.renderCell(i);
             if (pathData) {
-                // Теперь мы на 100% уверены, что factionsData[planet.faction] существует
                 const factionInfo = factionsData[planet.faction];
                 
                 const cell = document.createElementNS('http://www.w3.org/2000/svg', 'path');
                 cell.setAttribute('d', pathData);
                 cell.setAttribute('class', 'voronoi-cell');
+                
+                // Цвета: основной на границы, дополнительный на фон
+                cell.style.fill = factionInfo.secondaryColor; 
                 cell.style.stroke = factionInfo.mainColor;
-                cell.style.fill = factionInfo.secondaryColor;
+                
+                // Эффект "обводка внутри":
+                // 1. Ставим двойную толщину (например, 4px, чтобы видимыми остались 2px)
+                cell.style.strokeWidth = "4px"; 
+                // 2. Обрезаем ячейку по её же собственному контуру
+                cell.style.clipPath = `path('${pathData}')`;
+                
                 voronoiLayer.appendChild(cell);
             }
         });
@@ -415,4 +423,5 @@ function setupSearch() {
 }
 
 initMap();
+
 
