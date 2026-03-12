@@ -16,7 +16,7 @@ const factionsData = {
     },
     "Нейтральные Системы": {
         name: "Нейтральные Системы",
-        mainColor: "#a0a0a0",
-        secondaryColor: "#333333"
+        mainColor: "#00d4f4",
+        secondaryColor: "#d79800"
     }
 };
