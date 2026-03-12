@@ -2,7 +2,7 @@
     --bg-color: #03050a;
     --hud-bg: #1b1926;        
     --hud-secondary: #13121a; 
-    --hud-cyan: #0c85e2;      
+    --hud-cyan: #0c85e2;
 }
 
 body {
@@ -43,6 +43,7 @@ svg { width: 100%; height: 100%; display: block; }
 .voronoi-cell {
     fill-opacity: 1;
     stroke-opacity: 1;
+    stroke-width: 1.5;
     pointer-events: none;
 }
 
