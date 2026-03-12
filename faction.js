@@ -9,6 +9,11 @@ const factionsData = {
         mainColor: "#FCFECD",
         secondaryColor: "#3D375D"
     },
+    "Картель Хаттов": {
+        name: "Картель Хаттов",
+        mainColor: "#BED378",
+        secondaryColor: "#556033"
+    },
     "Нейтральные Системы": {
         name: "Нейтральные Системы",
         mainColor: "#a0a0a0",
