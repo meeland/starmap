@@ -14,6 +14,11 @@ const factionsData = {
         mainColor: "#BED378",
         secondaryColor: "#556033"
     },
+    "Мандалорцы": {
+        name: "Мандалорцы",
+        mainColor: "#FFC69A",
+        secondaryColor: "#2C3F46"
+    },
     "Нейтральные Системы": {
         name: "Нейтральные Системы",
         mainColor: "#a0a0a0",
