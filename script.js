@@ -8,6 +8,7 @@ const mapGroup = document.getElementById('map-group');
 const connectionsLayer = document.getElementById('connections-layer');
 const routeVisualLayer = document.getElementById('route-visual-layer');
 const planetsLayer = document.getElementById('planets-layer');
+const voronoiLayer = document.getElementById('voronoi-layer'); // Новый слой
 
 const tooltip = document.getElementById('tooltip');
 const hoverTooltip = document.getElementById('hover-tooltip');
@@ -29,10 +30,26 @@ let globalConnections = [];
 // Переменные маршрутизатора
 let isRoutingMode = false;
 let routeNodes = [];
-let routeVisualElements = []; // Хранит как линии, так и кольца
+let routeVisualElements = []; 
 let d0 = 0, dColor = 0, dOff = 0;
 
-// Управление маршрутизатором с анимацией панели
+// Управление слоями
+const btnLayerBare = document.getElementById('btn-layer-bare');
+const btnLayerPol = document.getElementById('btn-layer-pol');
+
+btnLayerBare.onclick = () => {
+    voronoiLayer.style.display = 'none';
+    btnLayerBare.classList.add('active');
+    btnLayerPol.classList.remove('active');
+};
+
+btnLayerPol.onclick = () => {
+    voronoiLayer.style.display = 'block';
+    btnLayerPol.classList.add('active');
+    btnLayerBare.classList.remove('active');
+};
+
+// Управление маршрутизатором
 document.getElementById('btn-toggle-route').onclick = (e) => {
     isRoutingMode = !isRoutingMode;
     
@@ -64,7 +81,6 @@ function updateRouteUI() {
     document.getElementById('route-points').textContent = routeNodes.length;
 }
 
-// Создание вращающегося кольца выбора
 function createRouteRing(x, y) {
     const ringGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
     ringGroup.setAttribute('transform', `translate(${x}, ${y})`);
@@ -84,7 +100,6 @@ function handleRouteClick(planet) {
     const absX2 = (planet.x / 100) * MAP_SIZE;
     const absY2 = (planet.y / 100) * MAP_SIZE;
 
-    // Первая точка маршрута
     if (routeNodes.length === 0) {
         routeNodes.push(planet);
         routeVisualElements.push(createRouteRing(absX2, absY2));
@@ -95,12 +110,10 @@ function handleRouteClick(planet) {
     const last = routeNodes[routeNodes.length - 1];
     if (last.id === planet.id) return;
 
-    // Проверка наличия пути
     const conn = globalConnections.find(c => 
         (c.from == last.id && c.to == planet.id) || (c.to == last.id && c.from == planet.id)
     );
 
-    // Условие для изолированных миров: позволяет "прыгать" если начальный ИЛИ целевой мир изолированы
     const isTargetIsolated = !globalConnections.some(c => c.from == planet.id || c.to == planet.id);
     const isLastIsolated = !globalConnections.some(c => c.from == last.id || c.to == last.id);
 
@@ -221,6 +234,26 @@ async function initMap() {
         scale = 0.3;
         updateTransform();
 
+        // 1. Построение диаграммы Вороного
+        const points = planetsList.map(p => [(p.x / 100) * MAP_SIZE, (p.y / 100) * MAP_SIZE]);
+        const delaunay = d3.Delaunay.from(points);
+        // Ограничиваем полигоны размерами карты
+        const voronoi = delaunay.voronoi([0, 0, MAP_SIZE, MAP_SIZE]);
+
+        planetsList.forEach((planet, i) => {
+            const pathData = voronoi.renderCell(i);
+            if (pathData) {
+                const factionInfo = factionsData[planet.faction] || factionsData["Нейтральные Системы"];
+                const cell = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                cell.setAttribute('d', pathData);
+                cell.setAttribute('class', 'voronoi-cell');
+                cell.style.fill = factionInfo.mainColor;
+                cell.style.stroke = factionInfo.secondaryColor;
+                voronoiLayer.appendChild(cell);
+            }
+        });
+
+        // 2. Отрисовка связей
         globalConnections.forEach(conn => {
             const p1 = planetMap[conn.from];
             const p2 = planetMap[conn.to];
@@ -246,6 +279,7 @@ async function initMap() {
             }
         });
 
+        // 3. Отрисовка планет
         planetsList.forEach(planet => {
             const absX = (planet.x / 100) * MAP_SIZE;
             const absY = (planet.y / 100) * MAP_SIZE;
