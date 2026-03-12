@@ -4,6 +4,7 @@ const CONNECTIONS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTV
 const MAP_SIZE = 4000;
 
 const svg = document.getElementById('starmap');
+const mapContainer = document.getElementById('map-container');
 const mapGroup = document.getElementById('map-group');
 const connectionsLayer = document.getElementById('connections-layer');
 const routeVisualLayer = document.getElementById('route-visual-layer');
@@ -11,7 +12,6 @@ const planetsLayer = document.getElementById('planets-layer');
 const voronoiLayer = document.getElementById('voronoi-layer'); 
 
 const tooltip = document.getElementById('tooltip');
-const hoverTooltip = document.getElementById('hover-tooltip');
 const ttTitle = document.getElementById('tt-title');
 const ttInfo = document.getElementById('tt-info');
 const ttFactionBadge = document.getElementById('tt-faction-badge');
@@ -32,7 +32,6 @@ let routeNodes = [];
 let routeVisualElements = []; 
 let d0 = 0, dColor = 0, dOff = 0;
 
-// Автоматическая генерация легенды из faction.js
 function buildLegend() {
     const legendContainer = document.getElementById('faction-legend');
     legendContainer.innerHTML = ''; 
@@ -60,12 +59,14 @@ btnLayerBare.onclick = () => {
     voronoiLayer.style.display = 'none';
     btnLayerBare.classList.add('active');
     btnLayerPol.classList.remove('active');
+    mapContainer.classList.remove('political-mode'); // Отключаем цветные надписи
 };
 
 btnLayerPol.onclick = () => {
     voronoiLayer.style.display = 'block';
     btnLayerPol.classList.add('active');
     btnLayerBare.classList.remove('active');
+    mapContainer.classList.add('political-mode'); // Включаем цветные надписи
 };
 
 // Управление маршрутизатором
@@ -168,6 +169,13 @@ function handleRouteClick(planet) {
 function updateTransform() {
     mapGroup.setAttribute('transform', `translate(${translateX}, ${translateY}) scale(${scale})`);
     zoomLevelText.textContent = scale.toFixed(2);
+    
+    // Скрываем подписи при масштабе 0.90 и меньше (отдаление)
+    if (scale <= 0.90) {
+        planetsLayer.classList.add('hide-labels');
+    } else {
+        planetsLayer.classList.remove('hide-labels');
+    }
 }
 
 function flyTo(x, y, targetScale = 2) {
@@ -246,12 +254,8 @@ async function initMap() {
 
         const [planetsData, connectionsData] = await Promise.all([fetchCSV(PLANETS_CSV_URL), fetchCSV(CONNECTIONS_CSV_URL)]);
         
-        // НОРМАЛИЗАЦИЯ ДАННЫХ
         planetsList = planetsData.filter(p => p.id).map(p => {
-            // Убираем лишние пробелы по краям, если они есть
             let factionName = p.faction ? p.faction.trim() : "";
-            
-            // Если ячейка пустая, или в ней мусор, или фракции нет в faction.js - делаем нейтральной
             if (!factionName || !factionsData[factionName]) {
                 p.faction = "Нейтральные Системы";
             } else {
@@ -275,14 +279,13 @@ async function initMap() {
         planetsList.forEach((planet, i) => {
             const pathData = voronoi.renderCell(i);
             if (pathData) {
-                // Теперь мы на 100% уверены, что factionsData[planet.faction] существует
                 const factionInfo = factionsData[planet.faction];
                 
                 const cell = document.createElementNS('http://www.w3.org/2000/svg', 'path');
                 cell.setAttribute('d', pathData);
                 cell.setAttribute('class', 'voronoi-cell');
-                cell.style.stroke = factionInfo.mainColor;
                 cell.style.fill = factionInfo.secondaryColor;
+                cell.style.stroke = factionInfo.mainColor;
                 voronoiLayer.appendChild(cell);
             }
         });
@@ -300,7 +303,8 @@ async function initMap() {
                 line.setAttribute('y2', (p2.y / 100) * MAP_SIZE);
                 line.setAttribute('class', 'connection');
                 
-                let routeColor = '#626465'; 
+                // Цвет региональных маршрутов светлее (серый #8b8b8b)
+                let routeColor = '#8b8b8b'; 
                 if (routeType === 'V') routeColor = '#8a2be2'; 
                 else if (routeType === 'G') routeColor = '#2ecc71'; 
                 else if (routeType === 'Y') routeColor = '#f1c40f'; 
@@ -318,38 +322,75 @@ async function initMap() {
 
             const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
             
-            // Запрашиваем информацию о фракции без fallback-ов
             const factionInfo = factionsData[planet.faction];
             const color = factionInfo.mainColor;
             const secondaryColor = factionInfo.secondaryColor;
 
+            // 1. Желтое кольцо (по умолчанию скрыто)
+            const hoverRing = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            hoverRing.setAttribute('cx', absX);
+            hoverRing.setAttribute('cy', absY);
+            hoverRing.setAttribute('r', 5);
+            hoverRing.setAttribute('fill', 'none');
+            hoverRing.setAttribute('stroke', '#ffcc00'); // Желтый цвет
+            hoverRing.setAttribute('stroke-width', '1');
+            // Длина окружности ~31.4. Делим на 4 сегмента: штрих 5, пробел 2.85
+            hoverRing.setAttribute('stroke-dasharray', '5 2.85');
+            hoverRing.setAttribute('class', 'hover-ring');
+            hoverRing.style.display = 'none';
+            group.appendChild(hoverRing);
+
+            // 2. Планета
             const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
             circle.setAttribute('cx', absX);
             circle.setAttribute('cy', absY);
             circle.setAttribute('r', 2.75); 
             circle.setAttribute('fill', color);
             circle.setAttribute('class', 'planet-circle');
+            group.appendChild(circle);
 
+            // 3. Расчет для подложки текста
+            const fontSize = 3.5;
+            // Приблизительная ширина текста (буква ~ 2px)
+            const estTextWidth = planet.name.length * 2.1; 
+            const paddingX = 1.5;
+            const paddingY = 0.5;
+            const rectWidth = estTextWidth + paddingX * 2;
+            const rectHeight = fontSize + paddingY * 2;
+
+            // 4. Подложка для названия
+            const textBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            textBg.setAttribute('x', absX - rectWidth / 2);
+            textBg.setAttribute('y', absY + 5.5); // Центруем под текстом
+            textBg.setAttribute('width', rectWidth);
+            textBg.setAttribute('height', rectHeight);
+            textBg.setAttribute('rx', 1.5); // Скругленные углы
+            textBg.setAttribute('class', 'planet-label-bg');
+            group.appendChild(textBg);
+
+            // 5. Текст названия
             const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
             text.textContent = planet.name;
             text.setAttribute('x', absX);
             text.setAttribute('y', absY + 9); 
             text.setAttribute('text-anchor', 'middle');
             text.setAttribute('class', 'planet-label');
+            // Устанавливаем переменную цвета для CSS (для работы политического слоя)
+            text.style.setProperty('--faction-color', color);
+            group.appendChild(text);
 
-            circle.addEventListener('mouseover', (e) => {
-                hoverTooltip.textContent = planet.name; 
-                hoverTooltip.style.left = `${e.pageX + 15}px`;
-                hoverTooltip.style.top = `${e.pageY - 25}px`;
-                hoverTooltip.style.borderColor = color;
-                hoverTooltip.style.display = 'block';
+            // Логика наведения (показываем кольцо)
+            circle.addEventListener('mouseover', () => {
+                hoverRing.style.display = 'block';
             });
 
-            circle.addEventListener('mouseout', () => hoverTooltip.style.display = 'none');
+            circle.addEventListener('mouseout', () => {
+                hoverRing.style.display = 'none';
+            });
 
+            // Логика клика
             circle.addEventListener('click', (e) => {
                 e.stopPropagation();
-                hoverTooltip.style.display = 'none';
                 
                 if (isRoutingMode) {
                     handleRouteClick(planet);
@@ -369,8 +410,6 @@ async function initMap() {
                 }
             });
 
-            group.appendChild(circle);
-            group.appendChild(text);
             planetsLayer.appendChild(group);
         });
 
