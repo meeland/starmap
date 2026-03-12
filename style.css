@@ -31,7 +31,6 @@ svg { width: 100%; height: 100%; display: block; }
 .planet-circle { cursor: pointer; transition: r 0.1s; }
 .planet-circle:hover { r: 5; }
 
-/* Линии маршрутов на 40% тоньше (1.4 -> 0.84) */
 .connection { stroke-width: 0.84; }
 
 .voronoi-cell {
@@ -44,39 +43,29 @@ svg { width: 100%; height: 100%; display: block; }
 /* Настройки текста названий планет */
 .planet-label {
     font-family: 'Orbitron', sans-serif;
-    font-size: 3.5px; /* Уменьшено на 30% (с 5px) */
+    font-size: 3.5px; 
     fill: #ccc;
     pointer-events: none;
     transition: fill 0.3s;
 }
 
-/* Фон (подложка) названия планеты */
 .planet-label-bg {
     fill: rgba(0, 0, 0, 0.6);
     pointer-events: none;
 }
 
-/* Скрываем подписи, когда масштаб <= 0.90 */
 .hide-labels .planet-label,
 .hide-labels .planet-label-bg {
     display: none;
 }
 
-/* В политическом слое красим текст в цвет фракции (через CSS переменную) */
 .political-mode .planet-label {
     fill: var(--faction-color) !important;
 }
 
-/* Кольцо при наведении на планету */
+/* Статичное жёлтое кольцо */
 .hover-ring {
     pointer-events: none;
-    transform-origin: center;
-    transform-box: fill-box;
-    animation: ringSpin 3s linear infinite;
-}
-
-@keyframes ringSpin {
-    to { transform: rotate(360deg); }
 }
 
 /* UI HUD */
@@ -95,9 +84,9 @@ svg { width: 100%; height: 100%; display: block; }
 .top-left { top: 20px; left: 20px; }
 .top-right { top: 20px; right: 20px; }
 .bottom-left { bottom: 20px; left: 20px; }
-.bottom-right { bottom: 20px; right: 20px; display: flex; flex-direction: column; align-items: flex-end; }
+/* Строго заданная ширина панели органов управления (172px) */
+.bottom-right { bottom: 20px; right: 20px; display: flex; flex-direction: column; align-items: flex-end; width: 172px; box-sizing: border-box; }
 
-/* Переключатели слоёв */
 .layer-controls {
     display: flex;
     gap: 5px;
@@ -124,11 +113,13 @@ svg { width: 100%; height: 100%; display: block; }
     color: var(--hud-bg);
 }
 
-/* Отдельная кнопка маршрута */
+/* Кнопка маршрута - синхронизирована по ширине (172px) и углам (4px) с нижней панелью */
 #btn-toggle-route {
     position: absolute;
     bottom: 135px; 
     right: 20px;
+    width: 172px; 
+    box-sizing: border-box;
     background: var(--hud-secondary);
     border: 1px solid var(--hud-cyan);
     color: var(--hud-cyan);
@@ -136,6 +127,7 @@ svg { width: 100%; height: 100%; display: block; }
     cursor: pointer;
     font-family: 'Orbitron', sans-serif;
     font-size: 12px;
+    border-radius: 4px;
     transition: 0.2s;
     pointer-events: auto;
     z-index: 102;
@@ -197,25 +189,27 @@ svg { width: 100%; height: 100%; display: block; }
     padding: 6px;
     cursor: pointer;
     font-family: 'Orbitron', sans-serif;
+    border-radius: 4px;
     transition: 0.2s;
 }
 
 #btn-reset-route:hover { background: #ff4444; color: #fff; }
 
-/* Визуальные эффекты на карте */
+/* Визуальные эффекты маршрута */
 .route-line {
     stroke: #00ffcc;
-    stroke-width: 2.5;
+    stroke-width: 1.5; /* Линия маршрута стала тоньше (было 2.5) */
     stroke-dasharray: 6;
     animation: routeFlow 1s linear infinite;
     pointer-events: none;
 }
 
+/* Кольцо построения маршрута (вращается) */
 .route-ring {
     fill: none;
     stroke: #00ffcc;
-    stroke-width: 1.5;
-    stroke-dasharray: 4;
+    transform-origin: center;
+    transform-box: fill-box;
     animation: spinRing 4s linear infinite;
     pointer-events: none;
 }
@@ -223,6 +217,10 @@ svg { width: 100%; height: 100%; display: block; }
 @keyframes routeFlow {
     from { stroke-dashoffset: 12; }
     to { stroke-dashoffset: 0; }
+}
+
+@keyframes spinRing {
+    to { transform: rotate(360deg); }
 }
 
 /* Поиск */
@@ -240,28 +238,45 @@ input {
 .search-item { padding: 8px; cursor: pointer; font-size: 12px; }
 .search-item:hover { background: var(--hud-secondary); }
 
-/* Кнопки и Легенда */
+/* Кнопки управления */
 .controls { display: flex; gap: 10px; margin-bottom: 10px; }
 .controls button {
     display: block; width: 40px; height: 40px;
     background: var(--hud-secondary); border: 1px solid var(--hud-cyan);
     color: var(--hud-cyan); font-size: 20px; cursor: pointer; transition: 0.2s;
+    border-radius: 4px; /* Углы скруглены для соответствия кнопке маршрута */
 }
 .controls button:hover { background: var(--hud-cyan); color: var(--hud-bg); }
 
 .telemetry { font-size: 14px; letter-spacing: 1px; color: var(--hud-cyan); text-align: right; }
 
-.legend-item { display: flex; align-items: center; margin-bottom: 8px; font-size: 12px; }
-.color-box { width: 12px; height: 12px; margin-right: 10px; border-radius: 50%; }
+/* Блочная легенда */
+.legend { width: 250px; box-sizing: border-box; }
+.legend-block {
+    display: block;
+    width: 100%;
+    padding: 8px 10px;
+    margin-bottom: 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    text-align: center;
+    box-sizing: border-box;
+    border: 1px solid;
+    letter-spacing: 0.5px;
+}
+.legend-block:last-child {
+    margin-bottom: 0;
+}
 
-/* Окна информации */
+/* Окно информации */
 #tooltip {
     position: absolute; background: var(--hud-bg);
     border: 1px solid var(--hud-cyan); padding: 15px 20px; border-radius: 4px;
     pointer-events: none; display: none; width: 300px; z-index: 100;
 }
 
-#tt-title { margin: 0; color: #ffffff; font-size: 16px; font-weight: normal; text-align: left; }
+/* Шрифт названия мира уменьшен на 25% (с 16px до 12px) */
+#tt-title { margin: 0; color: #ffffff; font-size: 12px; font-weight: normal; text-align: left; }
 #tt-faction-badge { font-size: 12px; font-weight: normal; text-align: left; margin-top: 4px; display: block; }
 
 #tt-info { 
