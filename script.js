@@ -37,21 +37,19 @@ function buildLegend() {
     legendContainer.innerHTML = ''; 
 
     Object.values(factionsData).forEach(faction => {
-        const item = document.createElement('div');
-        item.className = 'legend-item';
+        const block = document.createElement('div');
+        block.className = 'legend-block';
+        block.textContent = faction.name;
         
-        const colorBox = document.createElement('span');
-        colorBox.className = 'color-box';
-        colorBox.style.backgroundColor = faction.mainColor;
+        // Цвет блока - дополнительный, цвет текста - основной
+        block.style.backgroundColor = faction.secondaryColor;
+        block.style.color = faction.mainColor;
+        block.style.borderColor = faction.mainColor;
         
-        item.appendChild(colorBox);
-        item.appendChild(document.createTextNode(' ' + faction.name));
-        
-        legendContainer.appendChild(item);
+        legendContainer.appendChild(block);
     });
 }
 
-// Управление слоями
 const btnLayerBare = document.getElementById('btn-layer-bare');
 const btnLayerPol = document.getElementById('btn-layer-pol');
 
@@ -59,17 +57,16 @@ btnLayerBare.onclick = () => {
     voronoiLayer.style.display = 'none';
     btnLayerBare.classList.add('active');
     btnLayerPol.classList.remove('active');
-    mapContainer.classList.remove('political-mode'); // Отключаем цветные надписи
+    mapContainer.classList.remove('political-mode');
 };
 
 btnLayerPol.onclick = () => {
     voronoiLayer.style.display = 'block';
     btnLayerPol.classList.add('active');
     btnLayerBare.classList.remove('active');
-    mapContainer.classList.add('political-mode'); // Включаем цветные надписи
+    mapContainer.classList.add('political-mode');
 };
 
-// Управление маршрутизатором
 document.getElementById('btn-toggle-route').onclick = (e) => {
     isRoutingMode = !isRoutingMode;
     
@@ -110,6 +107,9 @@ function createRouteRing(x, y) {
     ring.setAttribute('cx', 0);
     ring.setAttribute('cy', 0);
     ring.setAttribute('class', 'route-ring');
+    ring.setAttribute('stroke-width', '1'); // Толщина как у жёлтого кольца
+    // Делим на 4 части (длина окружности ~50.26 / 4 = 12.56)
+    ring.setAttribute('stroke-dasharray', '8 4.56'); 
     
     ringGroup.appendChild(ring);
     routeVisualLayer.appendChild(ringGroup);
@@ -170,7 +170,6 @@ function updateTransform() {
     mapGroup.setAttribute('transform', `translate(${translateX}, ${translateY}) scale(${scale})`);
     zoomLevelText.textContent = scale.toFixed(2);
     
-    // Скрываем подписи при масштабе 0.90 и меньше (отдаление)
     if (scale <= 0.90) {
         planetsLayer.classList.add('hide-labels');
     } else {
@@ -303,7 +302,6 @@ async function initMap() {
                 line.setAttribute('y2', (p2.y / 100) * MAP_SIZE);
                 line.setAttribute('class', 'connection');
                 
-                // Цвет региональных маршрутов светлее (серый #8b8b8b)
                 let routeColor = '#8b8b8b'; 
                 if (routeType === 'V') routeColor = '#8a2be2'; 
                 else if (routeType === 'G') routeColor = '#2ecc71'; 
@@ -326,21 +324,18 @@ async function initMap() {
             const color = factionInfo.mainColor;
             const secondaryColor = factionInfo.secondaryColor;
 
-            // 1. Желтое кольцо (по умолчанию скрыто)
             const hoverRing = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
             hoverRing.setAttribute('cx', absX);
             hoverRing.setAttribute('cy', absY);
             hoverRing.setAttribute('r', 5);
             hoverRing.setAttribute('fill', 'none');
-            hoverRing.setAttribute('stroke', '#ffcc00'); // Желтый цвет
+            hoverRing.setAttribute('stroke', '#ffcc00');
             hoverRing.setAttribute('stroke-width', '1');
-            // Длина окружности ~31.4. Делим на 4 сегмента: штрих 5, пробел 2.85
             hoverRing.setAttribute('stroke-dasharray', '5 2.85');
             hoverRing.setAttribute('class', 'hover-ring');
             hoverRing.style.display = 'none';
             group.appendChild(hoverRing);
 
-            // 2. Планета
             const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
             circle.setAttribute('cx', absX);
             circle.setAttribute('cy', absY);
@@ -349,37 +344,31 @@ async function initMap() {
             circle.setAttribute('class', 'planet-circle');
             group.appendChild(circle);
 
-            // 3. Расчет для подложки текста
             const fontSize = 3.5;
-            // Приблизительная ширина текста (буква ~ 2px)
             const estTextWidth = planet.name.length * 2.1; 
             const paddingX = 1.5;
             const paddingY = 0.5;
             const rectWidth = estTextWidth + paddingX * 2;
             const rectHeight = fontSize + paddingY * 2;
 
-            // 4. Подложка для названия
             const textBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
             textBg.setAttribute('x', absX - rectWidth / 2);
-            textBg.setAttribute('y', absY + 5.5); // Центруем под текстом
+            textBg.setAttribute('y', absY + 5.5);
             textBg.setAttribute('width', rectWidth);
             textBg.setAttribute('height', rectHeight);
-            textBg.setAttribute('rx', 1.5); // Скругленные углы
+            textBg.setAttribute('rx', 1.5);
             textBg.setAttribute('class', 'planet-label-bg');
             group.appendChild(textBg);
 
-            // 5. Текст названия
             const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
             text.textContent = planet.name;
             text.setAttribute('x', absX);
             text.setAttribute('y', absY + 9); 
             text.setAttribute('text-anchor', 'middle');
             text.setAttribute('class', 'planet-label');
-            // Устанавливаем переменную цвета для CSS (для работы политического слоя)
             text.style.setProperty('--faction-color', color);
             group.appendChild(text);
 
-            // Логика наведения (показываем кольцо)
             circle.addEventListener('mouseover', () => {
                 hoverRing.style.display = 'block';
             });
@@ -388,7 +377,6 @@ async function initMap() {
                 hoverRing.style.display = 'none';
             });
 
-            // Логика клика
             circle.addEventListener('click', (e) => {
                 e.stopPropagation();
                 
