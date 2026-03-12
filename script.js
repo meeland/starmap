@@ -281,8 +281,8 @@ async function initMap() {
                 const cell = document.createElementNS('http://www.w3.org/2000/svg', 'path');
                 cell.setAttribute('d', pathData);
                 cell.setAttribute('class', 'voronoi-cell');
-                cell.style.fill = factionInfo.mainColor;
-                cell.style.stroke = factionInfo.secondaryColor;
+                cell.style.stroke = factionInfo.mainColor;
+                cell.style.fill = factionInfo.secondaryColor;
                 voronoiLayer.appendChild(cell);
             }
         });
@@ -415,3 +415,4 @@ function setupSearch() {
 }
 
 initMap();
+
