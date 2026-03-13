@@ -9,7 +9,7 @@ body {
     margin: 0;
     background-color: var(--bg-color);
     color: #ffffff;
-    font-family: 'Orbitron', sans-serif;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     overflow: hidden;
     user-select: none;
 }
@@ -40,7 +40,6 @@ svg { width: 100%; height: 100%; display: block; }
 }
 
 .planet-label {
-    font-family: 'Orbitron', sans-serif;
     font-size: 3.5px; 
     fill: #ccc;
     pointer-events: none;
@@ -75,20 +74,36 @@ svg { width: 100%; height: 100%; display: block; }
     border-radius: 4px; pointer-events: auto;
 }
 
-/* Изменения в легенде */
-.legend { width: auto; min-width: 280px; max-width: 400px; padding: 15px; }
+/* Обновленная Легенда */
+.legend { 
+    width: auto; 
+    min-width: 280px; 
+    max-width: 400px; 
+    padding: 0; /* Убрано из контейнера, перенесено внутрь */
+    overflow: hidden;
+}
 
 #legend-header {
     cursor: pointer;
     font-size: 12px;
     color: var(--hud-cyan);
-    margin-bottom: 10px;
+    padding: 12px 15px;
+    margin: 0;
     display: flex;
     justify-content: space-between;
     align-items: center;
     letter-spacing: 1px;
     font-weight: bold;
+    background: var(--hud-bg);
+    border-bottom: 1px solid rgba(12, 133, 226, 0.3);
+    transition: background 0.2s;
 }
+
+#legend-header:hover { background: var(--hud-secondary); }
+
+.legend.collapsed #legend-header { border-bottom: none; }
+
+#faction-legend { padding: 15px; }
 
 .legend-block {
     display: flex; align-items: center; width: 100%; padding: 8px 15px; margin-bottom: 8px;
@@ -98,7 +113,14 @@ svg { width: 100%; height: 100%; display: block; }
 .legend-block:last-child { margin-bottom: 0; }
 
 .faction-count {
-    padding: 2px 6px; border-radius: 3px; font-weight: bold; font-size: 11px; margin-right: 10px;
+    padding: 2px 0; 
+    border-radius: 3px; 
+    font-weight: bold; 
+    font-size: 11px; 
+    margin-right: 10px;
+    width: 28px; /* Жестко заданная ширина */
+    text-align: center;
+    flex-shrink: 0;
 }
 
 .top-left { top: 20px; left: 20px; }
@@ -122,9 +144,9 @@ svg { width: 100%; height: 100%; display: block; }
     position: absolute; bottom: 135px; right: 20px; width: 172px; 
     box-sizing: border-box; background: var(--hud-secondary);
     border: 1px solid var(--hud-cyan); color: var(--hud-cyan);
-    padding: 10px 15px; cursor: pointer; font-family: 'Orbitron', sans-serif;
+    padding: 10px 15px; cursor: pointer; font-family: inherit;
     font-size: 12px; border-radius: 4px; transition: 0.2s;
-    pointer-events: auto; z-index: 102;
+    pointer-events: auto; z-index: 102; font-weight: bold;
 }
 #btn-toggle-route:hover, #btn-toggle-route.active { background: var(--hud-cyan); color: var(--hud-bg); }
 
@@ -137,14 +159,14 @@ svg { width: 100%; height: 100%; display: block; }
 #route-panel.open { transform: scaleY(1); opacity: 1; pointer-events: auto; }
 .route-panel-content { padding: 15px; }
 
-.route-header { color: var(--hud-cyan); font-size: 14px; margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 5px; }
+.route-header { color: var(--hud-cyan); font-size: 14px; margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 5px; font-weight: bold; }
 .route-stat { font-size: 11px; margin-bottom: 6px; color: #ccc; }
 .route-stat span { color: #fff; float: right; font-weight: bold; }
 
 #btn-reset-route {
     width: 100%; margin-top: 10px; background: var(--hud-secondary);
     border: 1px solid #ff4444; color: #ff4444; padding: 6px; cursor: pointer;
-    font-family: 'Orbitron', sans-serif; border-radius: 4px; transition: 0.2s;
+    font-family: inherit; border-radius: 4px; transition: 0.2s; font-weight: bold;
 }
 #btn-reset-route:hover { background: #ff4444; color: #fff; }
 
@@ -160,10 +182,11 @@ svg { width: 100%; height: 100%; display: block; }
 @keyframes routeFlow { from { stroke-dashoffset: 12; } to { stroke-dashoffset: 0; } }
 @keyframes spinRing { to { transform: rotate(360deg); } }
 
-.search-box { position: relative; width: 250px; }
+/* Поиск укорочен на ~30% (с 250px до 175px) */
+.search-box { position: relative; width: 175px; }
 input {
     width: 100%; background: var(--hud-secondary); border: 1px solid var(--hud-cyan);
-    color: var(--hud-cyan); padding: 8px; font-family: 'Orbitron', sans-serif;
+    color: var(--hud-cyan); padding: 8px; font-family: inherit;
     outline: none; box-sizing: border-box;
 }
 #search-results {
@@ -182,23 +205,21 @@ input {
 }
 .controls button:hover { background: var(--hud-cyan); color: var(--hud-bg); }
 
-.telemetry { font-size: 14px; letter-spacing: 1px; color: var(--hud-cyan); text-align: right; }
+.telemetry { font-size: 14px; letter-spacing: 1px; color: var(--hud-cyan); text-align: right; font-weight: bold; }
 
-/* Tooltip & Wiki link */
 #tooltip {
     position: absolute; background: var(--hud-bg);
     border: 1px solid var(--hud-cyan); border-radius: 4px;
-    pointer-events: auto;
-    display: none; width: 300px; z-index: 100;
+    pointer-events: auto; display: none; width: 300px; z-index: 100;
     overflow: hidden; 
 }
 .tt-main-content { padding: 15px 20px; }
-#tt-title { margin: 0; color: #ffffff; font-size: 12px; font-weight: normal; text-align: left; }
+#tt-title { margin: 0; color: #ffffff; font-size: 12px; font-weight: normal; text-align: left; font-weight: bold; }
 #tt-faction-badge { font-size: 12px; font-weight: normal; text-align: left; margin-top: 4px; display: block; }
 
 #tt-info { 
     background-color: var(--hud-secondary); padding: 10px 15px; border-radius: 6px;
-    font-family: sans-serif; font-size: 11px; line-height: 1.5; color: #ccc; 
+    font-size: 11px; line-height: 1.5; color: #ccc; 
     margin: 10px -10px 0 -10px; box-sizing: border-box;
 }
 
@@ -212,10 +233,9 @@ input {
     color: #444; background: #111; pointer-events: none; border-top: 1px solid #333;
 }
 
-/* Координаты при наведении */
 #hover-coords {
     position: absolute; background: rgba(0, 0, 0, 0.8);
     padding: 4px 8px; border-radius: 4px;
-    font-family: sans-serif; font-size: 10px; color: #fff;
+    font-size: 10px; color: #fff;
     pointer-events: none; display: none; z-index: 150;
 }
