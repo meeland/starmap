@@ -41,7 +41,6 @@ function buildLegend() {
         block.className = 'legend-block';
         block.textContent = faction.name;
         
-        // Цвет блока - дополнительный, цвет текста - основной
         block.style.backgroundColor = faction.secondaryColor;
         block.style.color = faction.mainColor;
         block.style.borderColor = faction.mainColor;
@@ -107,9 +106,11 @@ function createRouteRing(x, y) {
     ring.setAttribute('cx', 0);
     ring.setAttribute('cy', 0);
     ring.setAttribute('class', 'route-ring');
-    ring.setAttribute('stroke-width', '1'); // Толщина как у жёлтого кольца
-    // Делим на 4 части (длина окружности ~50.26 / 4 = 12.56)
-    ring.setAttribute('stroke-dasharray', '8 4.56'); 
+    ring.setAttribute('stroke-width', '1');
+    
+    // Прямые углы для маршрутного кольца (4 сегмента)
+    ring.setAttribute('stroke-dasharray', '4.854 3'); 
+    ring.setAttribute('stroke-dashoffset', '1.5'); 
     
     ringGroup.appendChild(ring);
     routeVisualLayer.appendChild(ringGroup);
@@ -271,21 +272,104 @@ async function initMap() {
         scale = 0.3;
         updateTransform();
 
+        // -- Логика Вороного с отрисовкой границ ТОЛЬКО между разными фракциями внутри сектора --
         const points = planetsList.map(p => [(p.x / 100) * MAP_SIZE, (p.y / 100) * MAP_SIZE]);
         const delaunay = d3.Delaunay.from(points);
         const voronoi = delaunay.voronoi([0, 0, MAP_SIZE, MAP_SIZE]);
 
+        // Собираем карту граней (edges), чтобы знать, с кем граничит каждая ячейка
+        const edges = new Map();
+        planetsList.forEach((p, i) => {
+            const poly = voronoi.cellPolygon(i);
+            if (!poly) return;
+            for (let j = 0; j < poly.length - 1; j++) {
+                const p1 = poly[j];
+                const p2 = poly[j+1];
+                let pt1, pt2;
+                if (p1[0] < p2[0] - 0.001 || (Math.abs(p1[0] - p2[0]) <= 0.001 && p1[1] < p2[1])) {
+                    pt1 = p1; pt2 = p2;
+                } else {
+                    pt1 = p2; pt2 = p1;
+                }
+                const key = `${pt1[0].toFixed(2)},${pt1[1].toFixed(2)}-${pt2[0].toFixed(2)},${pt2[1].toFixed(2)}`;
+                
+                if (!edges.has(key)) edges.set(key, []);
+                edges.get(key).push({ cell: i, p1, p2 });
+            }
+        });
+
+        const defGroup = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+        voronoiLayer.appendChild(defGroup);
+
         planetsList.forEach((planet, i) => {
             const pathData = voronoi.renderCell(i);
-            if (pathData) {
-                const factionInfo = factionsData[planet.faction];
+            if (!pathData) return;
+            
+            const factionInfo = factionsData[planet.faction];
+            const isNeutral = (planet.faction === "Нейтральные Системы");
+
+            // 1. Создаем Clip Path для эффекта "внутренней обводки"
+            const clip = document.createElementNS('http://www.w3.org/2000/svg', 'clipPath');
+            clip.setAttribute('id', `clip-cell-${i}`);
+            const clipPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            clipPath.setAttribute('d', pathData);
+            clip.appendChild(clipPath);
+            defGroup.appendChild(clip);
+
+            // 2. Фон территории (бесшовный, сливается с союзниками)
+            const bg = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            bg.setAttribute('d', pathData);
+            bg.setAttribute('class', 'voronoi-bg');
+            // Если нейтральный - фон прозрачный
+            bg.style.fill = isNeutral ? "transparent" : factionInfo.secondaryColor;
+            voronoiLayer.appendChild(bg);
+
+            // 3. Высчитываем границы (только с другими фракциями)
+            let borderPath = "";
+            const poly = voronoi.cellPolygon(i);
+            if (poly) {
+                for (let j = 0; j < poly.length - 1; j++) {
+                    const p1 = poly[j];
+                    const p2 = poly[j+1];
+                    let pt1, pt2;
+                    if (p1[0] < p2[0] - 0.001 || (Math.abs(p1[0] - p2[0]) <= 0.001 && p1[1] < p2[1])) {
+                        pt1 = p1; pt2 = p2;
+                    } else {
+                        pt1 = p2; pt2 = p1;
+                    }
+                    const key = `${pt1[0].toFixed(2)},${pt1[1].toFixed(2)}-${pt2[0].toFixed(2)},${pt2[1].toFixed(2)}`;
+                    
+                    const edgeData = edges.get(key);
+                    let isBorder = false;
+                    
+                    if (edgeData.length === 1) {
+                        isBorder = true; // Это край карты
+                    } else {
+                        const otherCellInfo = edgeData.find(e => e.cell !== i);
+                        if (otherCellInfo && planetsList[otherCellInfo.cell].faction !== planet.faction) {
+                            isBorder = true; // Это граница с чужой фракцией
+                        }
+                    }
+
+                    if (isBorder) {
+                        borderPath += `M ${p1[0]} ${p1[1]} L ${p2[0]} ${p2[1]} `;
+                    }
+                }
+            }
+
+            // 4. Отрисовка внешней границы (внутри ячейки благодаря clip-path)
+            if (borderPath) {
+                const border = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                border.setAttribute('d', borderPath);
+                border.setAttribute('class', 'voronoi-border');
+                border.style.stroke = factionInfo.mainColor;
+                border.style.fill = "none";
+                border.setAttribute('clip-path', `url(#clip-cell-${i})`);
                 
-                const cell = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-                cell.setAttribute('d', pathData);
-                cell.setAttribute('class', 'voronoi-cell');
-                cell.style.fill = factionInfo.secondaryColor;
-                cell.style.stroke = factionInfo.mainColor;
-                voronoiLayer.appendChild(cell);
+                // Для нейтральных линий обводка тоньше в 2 раза
+                // Поскольку линия режется пополам (clip-path), задаем двойную толщину: 3 для обычных (видимо 1.5), 1.5 для нейтральных (видимо 0.75)
+                border.style.strokeWidth = isNeutral ? "1.5" : "3";
+                voronoiLayer.appendChild(border);
             }
         });
 
@@ -331,7 +415,10 @@ async function initMap() {
             hoverRing.setAttribute('fill', 'none');
             hoverRing.setAttribute('stroke', '#ffcc00');
             hoverRing.setAttribute('stroke-width', '1');
-            hoverRing.setAttribute('stroke-dasharray', '5 2.85');
+            
+            // Прямые углы (крест) для желтого кольца
+            hoverRing.setAttribute('stroke-dasharray', '4.854 3'); 
+            hoverRing.setAttribute('stroke-dashoffset', '1.5');
             hoverRing.setAttribute('class', 'hover-ring');
             hoverRing.style.display = 'none';
             group.appendChild(hoverRing);
@@ -345,15 +432,17 @@ async function initMap() {
             group.appendChild(circle);
 
             const fontSize = 3.5;
-            const estTextWidth = planet.name.length * 2.1; 
-            const paddingX = 1.5;
+            // Увеличен множитель ширины, чтобы точно влезали длинные названия
+            const estTextWidth = planet.name.length * 2.7; 
+            const paddingX = 2;
             const paddingY = 0.5;
             const rectWidth = estTextWidth + paddingX * 2;
             const rectHeight = fontSize + paddingY * 2;
 
             const textBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
             textBg.setAttribute('x', absX - rectWidth / 2);
-            textBg.setAttribute('y', absY + 5.5);
+            // Блок и текст подняты на 2 пикселя
+            textBg.setAttribute('y', absY + 3.5); 
             textBg.setAttribute('width', rectWidth);
             textBg.setAttribute('height', rectHeight);
             textBg.setAttribute('rx', 1.5);
@@ -363,7 +452,7 @@ async function initMap() {
             const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
             text.textContent = planet.name;
             text.setAttribute('x', absX);
-            text.setAttribute('y', absY + 9); 
+            text.setAttribute('y', absY + 7); // Было 9, поднято на 2
             text.setAttribute('text-anchor', 'middle');
             text.setAttribute('class', 'planet-label');
             text.style.setProperty('--faction-color', color);
