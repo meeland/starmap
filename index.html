@@ -14,7 +14,13 @@
 <body>
 
     <div id="ui-layer">
-        <div class="hud-panel top-left legend" id="faction-legend"></div>
+        <div class="hud-panel top-left legend" id="legend-panel">
+            <div id="legend-header">
+                <span>ФРАКЦИИ</span>
+                <span id="legend-arrow">▼</span>
+            </div>
+            <div id="faction-legend"></div>
+        </div>
 
         <div class="hud-panel top-right" style="display: flex; gap: 15px; align-items: center; padding: 10px 15px;">
             <div class="layer-controls">
@@ -87,10 +93,15 @@
     </div>
 
     <div id="tooltip">
-        <div id="tt-title">Название</div>
-        <div id="tt-faction-badge">Фракция</div>
-        <div id="tt-info" style="margin-top: 10px;">Информация</div>
+        <div class="tt-main-content">
+            <div id="tt-title">Название</div>
+            <div id="tt-faction-badge">Фракция</div>
+            <div id="tt-info" style="margin-top: 10px;">Информация</div>
+        </div>
+        <a id="tt-wiki" href="#" target="_blank">WOOKIEEPEDIA</a>
     </div>
+
+    <div id="hover-coords">X: 00 | Y: 00</div>
 
     <script src="faction.js"></script>
     <script src="script.js"></script>
