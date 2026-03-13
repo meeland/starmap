@@ -19,6 +19,11 @@ const factionsData = {
         mainColor: "#FFC69A",
         secondaryColor: "#2C3F46"
     },
+    "Корпоративный Сектор": {
+        name: "Корпоративный Сектор",
+        mainColor: "#FD8A87",
+        secondaryColor: "#3D1839"
+    },
     "Зайгеррианская Империя": {
         name: "Зайгеррианская Империя",
         mainColor: "#D1A054",
