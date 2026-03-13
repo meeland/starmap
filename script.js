@@ -38,7 +38,6 @@ function buildLegend() {
     const legendContainer = document.getElementById('faction-legend');
     legendContainer.innerHTML = ''; 
 
-    // Подсчет количества миров
     const factionCounts = {};
     planetsList.forEach(p => {
         factionCounts[p.faction] = (factionCounts[p.faction] || 0) + 1;
@@ -72,14 +71,18 @@ function buildLegend() {
 
 // Сворачивание легенды
 document.getElementById('legend-header').addEventListener('click', () => {
+    const panel = document.getElementById('legend-panel');
     const content = document.getElementById('faction-legend');
     const arrow = document.getElementById('legend-arrow');
-    if (content.style.display === 'none') {
-        content.style.display = 'block';
-        arrow.textContent = '▼';
-    } else {
+    
+    panel.classList.toggle('collapsed');
+    
+    if (panel.classList.contains('collapsed')) {
         content.style.display = 'none';
         arrow.textContent = '▶';
+    } else {
+        content.style.display = 'block';
+        arrow.textContent = '▼';
     }
 });
 
@@ -301,7 +304,6 @@ async function initMap() {
         globalConnections = connectionsData.filter(c => c.from && c.to);
         planetsList.forEach(p => planetMap[p.id] = p);
 
-        // Строим легенду только после того, как есть список планет
         buildLegend();
 
         translateX = window.innerWidth / 2 - (MAP_SIZE / 2) * 0.3;
@@ -350,6 +352,7 @@ async function initMap() {
             clip.appendChild(clipPath);
             defGroup.appendChild(clip);
 
+            // Базовая заливка ячейки (без толстой обводки)
             const bg = document.createElementNS('http://www.w3.org/2000/svg', 'path');
             bg.setAttribute('d', pathData);
             bg.setAttribute('class', 'voronoi-bg');
@@ -359,13 +362,13 @@ async function initMap() {
             } else {
                 bg.style.fill = factionInfo.secondaryColor;
                 bg.style.stroke = factionInfo.secondaryColor;
-                // Увеличена толщина обводки для скрытия стыков на большом масштабе
-                bg.style.strokeWidth = "3px";
-                bg.setAttribute('stroke-linejoin', 'round');
+                bg.style.strokeWidth = "1px"; // Тонкая базовая обводка
             }
             voronoiLayer.appendChild(bg);
 
             let borderPath = "";
+            let innerPath = ""; // Для закрашивания внутренних стыков
+
             const poly = voronoi.cellPolygon(i);
             if (!isNeutral && poly) {
                 for (let j = 0; j < poly.length - 1; j++) {
@@ -393,10 +396,23 @@ async function initMap() {
 
                     if (isBorder) {
                         borderPath += `M ${p1[0]} ${p1[1]} L ${p2[0]} ${p2[1]} `;
+                    } else {
+                        innerPath += `M ${p1[0]} ${p1[1]} L ${p2[0]} ${p2[1]} `;
                     }
                 }
             }
 
+            // Отрисовываем внутренние "скрывающие" линии для заделывания пиксельных щелей
+            if (innerPath) {
+                const innerBorder = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                innerBorder.setAttribute('d', innerPath);
+                innerBorder.style.stroke = factionInfo.secondaryColor;
+                innerBorder.style.fill = "none";
+                innerBorder.style.strokeWidth = "2.5"; // Толстая линия точно по центру стыка ячеек одной фракции
+                voronoiLayer.appendChild(innerBorder);
+            }
+
+            // Отрисовываем главную границу фракции с отсечением по маске, чтобы она не вылезала наружу
             if (borderPath) {
                 const border = document.createElementNS('http://www.w3.org/2000/svg', 'path');
                 border.setAttribute('d', borderPath);
