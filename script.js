@@ -38,14 +38,33 @@ function buildLegend() {
     const legendContainer = document.getElementById('faction-legend');
     legendContainer.innerHTML = ''; 
 
+    // Подсчет количества миров
+    const factionCounts = {};
+    planetsList.forEach(p => {
+        factionCounts[p.faction] = (factionCounts[p.faction] || 0) + 1;
+    });
+
     Object.values(factionsData).forEach(faction => {
         const block = document.createElement('div');
         block.className = 'legend-block';
-        block.textContent = faction.name;
         
         block.style.backgroundColor = faction.secondaryColor;
         block.style.color = faction.mainColor;
         block.style.borderColor = faction.mainColor;
+        
+        const count = factionCounts[faction.name] || 0;
+        
+        const countBadge = document.createElement('div');
+        countBadge.className = 'faction-count';
+        countBadge.textContent = count;
+        countBadge.style.backgroundColor = faction.mainColor;
+        countBadge.style.color = faction.secondaryColor;
+        
+        const nameSpan = document.createElement('span');
+        nameSpan.textContent = faction.name;
+        
+        block.appendChild(countBadge);
+        block.appendChild(nameSpan);
         
         legendContainer.appendChild(block);
     });
@@ -263,13 +282,10 @@ function fetchCSV(url) {
     });
 }
 
-// Предотвращаем закрытие тултипа при клике внутри него
 tooltip.addEventListener('click', (e) => e.stopPropagation());
 
 async function initMap() {
     try {
-        buildLegend();
-
         const [planetsData, connectionsData] = await Promise.all([fetchCSV(PLANETS_CSV_URL), fetchCSV(CONNECTIONS_CSV_URL)]);
         
         planetsList = planetsData.filter(p => p.id).map(p => {
@@ -284,6 +300,9 @@ async function initMap() {
 
         globalConnections = connectionsData.filter(c => c.from && c.to);
         planetsList.forEach(p => planetMap[p.id] = p);
+
+        // Строим легенду только после того, как есть список планет
+        buildLegend();
 
         translateX = window.innerWidth / 2 - (MAP_SIZE / 2) * 0.3;
         translateY = window.innerHeight / 2 - (MAP_SIZE / 2) * 0.3;
@@ -331,7 +350,6 @@ async function initMap() {
             clip.appendChild(clipPath);
             defGroup.appendChild(clip);
 
-            // Фон с обводкой такого же цвета убирает "стыки" между своими
             const bg = document.createElementNS('http://www.w3.org/2000/svg', 'path');
             bg.setAttribute('d', pathData);
             bg.setAttribute('class', 'voronoi-bg');
@@ -341,11 +359,12 @@ async function initMap() {
             } else {
                 bg.style.fill = factionInfo.secondaryColor;
                 bg.style.stroke = factionInfo.secondaryColor;
-                bg.style.strokeWidth = "1px";
+                // Увеличена толщина обводки для скрытия стыков на большом масштабе
+                bg.style.strokeWidth = "3px";
+                bg.setAttribute('stroke-linejoin', 'round');
             }
             voronoiLayer.appendChild(bg);
 
-            // Отрисовываем границы, но нейтральные системы пропускаем полностью
             let borderPath = "";
             const poly = voronoi.cellPolygon(i);
             if (!isNeutral && poly) {
@@ -385,7 +404,7 @@ async function initMap() {
                 border.style.stroke = factionInfo.mainColor;
                 border.style.fill = "none";
                 border.setAttribute('clip-path', `url(#clip-cell-${i})`);
-                border.style.strokeWidth = "3"; // При обрезке останется ровно половина (1.5) внутри
+                border.style.strokeWidth = "3"; 
                 voronoiLayer.appendChild(border);
             }
         });
@@ -432,7 +451,6 @@ async function initMap() {
             hoverRing.setAttribute('fill', 'none');
             hoverRing.setAttribute('stroke', '#ffcc00');
             hoverRing.setAttribute('stroke-width', '1');
-            // Математика разреза "крестом" (+ shape)
             hoverRing.setAttribute('stroke-dasharray', '5.854 2'); 
             hoverRing.setAttribute('stroke-dashoffset', '6.854');
             hoverRing.setAttribute('class', 'hover-ring');
@@ -475,7 +493,6 @@ async function initMap() {
             circle.addEventListener('mouseover', (e) => {
                 hoverRing.style.display = 'block';
                 
-                // Координаты
                 hoverCoords.textContent = `X: ${planet.x} | Y: ${planet.y}`;
                 hoverCoords.style.left = `${e.pageX + 15}px`;
                 hoverCoords.style.top = `${e.pageY - 15}px`;
@@ -500,7 +517,6 @@ async function initMap() {
                     
                     tooltip.style.borderColor = secondaryColor; 
                     
-                    // Логика Википедии
                     if (planet.wiki && planet.wiki.trim() !== "") {
                         ttWiki.href = planet.wiki;
                         ttWiki.classList.remove('disabled');
