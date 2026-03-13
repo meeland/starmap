@@ -19,6 +19,11 @@ const factionsData = {
         mainColor: "#FFC69A",
         secondaryColor: "#2C3F46"
     },
+    "Зайгеррианская Империя": {
+        name: "Зайгеррианская Империя",
+        mainColor: "#D1A054",
+        secondaryColor: "#2D2C2A"
+    },
     "Централия": {
         name: "Централия",
         mainColor: "#50C9CE",
