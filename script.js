@@ -15,6 +15,8 @@ const tooltip = document.getElementById('tooltip');
 const ttTitle = document.getElementById('tt-title');
 const ttInfo = document.getElementById('tt-info');
 const ttFactionBadge = document.getElementById('tt-faction-badge');
+const ttWiki = document.getElementById('tt-wiki');
+const hoverCoords = document.getElementById('hover-coords');
 const zoomLevelText = document.getElementById('zoom-level');
 
 let scale = 1;
@@ -49,6 +51,20 @@ function buildLegend() {
     });
 }
 
+// Сворачивание легенды
+document.getElementById('legend-header').addEventListener('click', () => {
+    const content = document.getElementById('faction-legend');
+    const arrow = document.getElementById('legend-arrow');
+    if (content.style.display === 'none') {
+        content.style.display = 'block';
+        arrow.textContent = '▼';
+    } else {
+        content.style.display = 'none';
+        arrow.textContent = '▶';
+    }
+});
+
+// Управление слоями
 const btnLayerBare = document.getElementById('btn-layer-bare');
 const btnLayerPol = document.getElementById('btn-layer-pol');
 
@@ -108,9 +124,8 @@ function createRouteRing(x, y) {
     ring.setAttribute('class', 'route-ring');
     ring.setAttribute('stroke-width', '1');
     
-    // Прямые углы для маршрутного кольца (4 сегмента)
-    ring.setAttribute('stroke-dasharray', '4.854 3'); 
-    ring.setAttribute('stroke-dashoffset', '1.5'); 
+    ring.setAttribute('stroke-dasharray', '5.854 2'); 
+    ring.setAttribute('stroke-dashoffset', '6.854'); 
     
     ringGroup.appendChild(ring);
     routeVisualLayer.appendChild(ringGroup);
@@ -248,6 +263,9 @@ function fetchCSV(url) {
     });
 }
 
+// Предотвращаем закрытие тултипа при клике внутри него
+tooltip.addEventListener('click', (e) => e.stopPropagation());
+
 async function initMap() {
     try {
         buildLegend();
@@ -272,12 +290,10 @@ async function initMap() {
         scale = 0.3;
         updateTransform();
 
-        // -- Логика Вороного с отрисовкой границ ТОЛЬКО между разными фракциями внутри сектора --
         const points = planetsList.map(p => [(p.x / 100) * MAP_SIZE, (p.y / 100) * MAP_SIZE]);
         const delaunay = d3.Delaunay.from(points);
         const voronoi = delaunay.voronoi([0, 0, MAP_SIZE, MAP_SIZE]);
 
-        // Собираем карту граней (edges), чтобы знать, с кем граничит каждая ячейка
         const edges = new Map();
         planetsList.forEach((p, i) => {
             const poly = voronoi.cellPolygon(i);
@@ -308,7 +324,6 @@ async function initMap() {
             const factionInfo = factionsData[planet.faction];
             const isNeutral = (planet.faction === "Нейтральные Системы");
 
-            // 1. Создаем Clip Path для эффекта "внутренней обводки"
             const clip = document.createElementNS('http://www.w3.org/2000/svg', 'clipPath');
             clip.setAttribute('id', `clip-cell-${i}`);
             const clipPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
@@ -316,18 +331,24 @@ async function initMap() {
             clip.appendChild(clipPath);
             defGroup.appendChild(clip);
 
-            // 2. Фон территории (бесшовный, сливается с союзниками)
+            // Фон с обводкой такого же цвета убирает "стыки" между своими
             const bg = document.createElementNS('http://www.w3.org/2000/svg', 'path');
             bg.setAttribute('d', pathData);
             bg.setAttribute('class', 'voronoi-bg');
-            // Если нейтральный - фон прозрачный
-            bg.style.fill = isNeutral ? "transparent" : factionInfo.secondaryColor;
+            if (isNeutral) {
+                bg.style.fill = "transparent";
+                bg.style.stroke = "none";
+            } else {
+                bg.style.fill = factionInfo.secondaryColor;
+                bg.style.stroke = factionInfo.secondaryColor;
+                bg.style.strokeWidth = "1px";
+            }
             voronoiLayer.appendChild(bg);
 
-            // 3. Высчитываем границы (только с другими фракциями)
+            // Отрисовываем границы, но нейтральные системы пропускаем полностью
             let borderPath = "";
             const poly = voronoi.cellPolygon(i);
-            if (poly) {
+            if (!isNeutral && poly) {
                 for (let j = 0; j < poly.length - 1; j++) {
                     const p1 = poly[j];
                     const p2 = poly[j+1];
@@ -343,11 +364,11 @@ async function initMap() {
                     let isBorder = false;
                     
                     if (edgeData.length === 1) {
-                        isBorder = true; // Это край карты
+                        isBorder = true;
                     } else {
                         const otherCellInfo = edgeData.find(e => e.cell !== i);
                         if (otherCellInfo && planetsList[otherCellInfo.cell].faction !== planet.faction) {
-                            isBorder = true; // Это граница с чужой фракцией
+                            isBorder = true;
                         }
                     }
 
@@ -357,7 +378,6 @@ async function initMap() {
                 }
             }
 
-            // 4. Отрисовка внешней границы (внутри ячейки благодаря clip-path)
             if (borderPath) {
                 const border = document.createElementNS('http://www.w3.org/2000/svg', 'path');
                 border.setAttribute('d', borderPath);
@@ -365,10 +385,7 @@ async function initMap() {
                 border.style.stroke = factionInfo.mainColor;
                 border.style.fill = "none";
                 border.setAttribute('clip-path', `url(#clip-cell-${i})`);
-                
-                // Для нейтральных линий обводка тоньше в 2 раза
-                // Поскольку линия режется пополам (clip-path), задаем двойную толщину: 3 для обычных (видимо 1.5), 1.5 для нейтральных (видимо 0.75)
-                border.style.strokeWidth = isNeutral ? "1.5" : "3";
+                border.style.strokeWidth = "3"; // При обрезке останется ровно половина (1.5) внутри
                 voronoiLayer.appendChild(border);
             }
         });
@@ -415,10 +432,9 @@ async function initMap() {
             hoverRing.setAttribute('fill', 'none');
             hoverRing.setAttribute('stroke', '#ffcc00');
             hoverRing.setAttribute('stroke-width', '1');
-            
-            // Прямые углы (крест) для желтого кольца
-            hoverRing.setAttribute('stroke-dasharray', '4.854 3'); 
-            hoverRing.setAttribute('stroke-dashoffset', '1.5');
+            // Математика разреза "крестом" (+ shape)
+            hoverRing.setAttribute('stroke-dasharray', '5.854 2'); 
+            hoverRing.setAttribute('stroke-dashoffset', '6.854');
             hoverRing.setAttribute('class', 'hover-ring');
             hoverRing.style.display = 'none';
             group.appendChild(hoverRing);
@@ -432,7 +448,6 @@ async function initMap() {
             group.appendChild(circle);
 
             const fontSize = 3.5;
-            // Увеличен множитель ширины, чтобы точно влезали длинные названия
             const estTextWidth = planet.name.length * 2.7; 
             const paddingX = 2;
             const paddingY = 0.5;
@@ -441,8 +456,7 @@ async function initMap() {
 
             const textBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
             textBg.setAttribute('x', absX - rectWidth / 2);
-            // Блок и текст подняты на 2 пикселя
-            textBg.setAttribute('y', absY + 3.5); 
+            textBg.setAttribute('y', absY + 3.5);
             textBg.setAttribute('width', rectWidth);
             textBg.setAttribute('height', rectHeight);
             textBg.setAttribute('rx', 1.5);
@@ -452,18 +466,25 @@ async function initMap() {
             const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
             text.textContent = planet.name;
             text.setAttribute('x', absX);
-            text.setAttribute('y', absY + 7); // Было 9, поднято на 2
+            text.setAttribute('y', absY + 7); 
             text.setAttribute('text-anchor', 'middle');
             text.setAttribute('class', 'planet-label');
             text.style.setProperty('--faction-color', color);
             group.appendChild(text);
 
-            circle.addEventListener('mouseover', () => {
+            circle.addEventListener('mouseover', (e) => {
                 hoverRing.style.display = 'block';
+                
+                // Координаты
+                hoverCoords.textContent = `X: ${planet.x} | Y: ${planet.y}`;
+                hoverCoords.style.left = `${e.pageX + 15}px`;
+                hoverCoords.style.top = `${e.pageY - 15}px`;
+                hoverCoords.style.display = 'block';
             });
 
             circle.addEventListener('mouseout', () => {
                 hoverRing.style.display = 'none';
+                hoverCoords.style.display = 'none';
             });
 
             circle.addEventListener('click', (e) => {
@@ -479,6 +500,15 @@ async function initMap() {
                     
                     tooltip.style.borderColor = secondaryColor; 
                     
+                    // Логика Википедии
+                    if (planet.wiki && planet.wiki.trim() !== "") {
+                        ttWiki.href = planet.wiki;
+                        ttWiki.classList.remove('disabled');
+                    } else {
+                        ttWiki.removeAttribute('href');
+                        ttWiki.classList.add('disabled');
+                    }
+
                     tooltip.style.left = `${e.pageX + 15}px`;
                     tooltip.style.top = `${e.pageY + 15}px`;
                     tooltip.style.display = 'block';
