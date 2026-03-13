@@ -34,6 +34,11 @@ const factionsData = {
         mainColor: "#50C9CE",
         secondaryColor: "#2E382E"
     },
+    "Ситхи": {
+        name: "Ситхи",
+        mainColor: "#F5735B",
+        secondaryColor: "#141414"
+    },
     "Нейтральные Системы": {
         name: "Нейтральные Системы",
         mainColor: "#a0a0a0",
