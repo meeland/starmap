@@ -1,5 +1,6 @@
 const PLANETS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTVPQVMnjZWNBWkWkebK4aCnYi3PhsewOGOaxSLfx0Fj2ZYc6tYkSS4iNoV8tWKEj22YEn8ysYE6kgl/pub?gid=416114984&single=true&output=csv';
 const CONNECTIONS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTVPQVMnjZWNBWkWkebK4aCnYi3PhsewOGOaxSLfx0Fj2ZYc6tYkSS4iNoV8tWKEj22YEn8ysYE6kgl/pub?gid=1688125961&single=true&output=csv';
+const OBJECTS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTVPQVMnjZWNBWkWkebK4aCnYi3PhsewOGOaxSLfx0Fj2ZYc6tYkSS4iNoV8tWKEj22YEn8ysYE6kgl/pub?gid=333417344&single=true&output=csv';
 
 const MAP_SIZE = 4000;
 
@@ -10,6 +11,7 @@ const connectionsLayer = document.getElementById('connections-layer');
 const routeVisualLayer = document.getElementById('route-visual-layer');
 const planetsLayer = document.getElementById('planets-layer');
 const voronoiLayer = document.getElementById('voronoi-layer'); 
+const objectsLayer = document.getElementById('objects-layer');
 
 const tooltip = document.getElementById('tooltip');
 const ttTitle = document.getElementById('tt-title');
@@ -210,8 +212,10 @@ function updateTransform() {
     
     if (scale <= 0.90) {
         planetsLayer.classList.add('hide-labels');
+        objectsLayer.classList.add('hide-labels');
     } else {
         planetsLayer.classList.remove('hide-labels');
+        objectsLayer.classList.remove('hide-labels');
     }
 }
 
@@ -289,7 +293,11 @@ tooltip.addEventListener('click', (e) => e.stopPropagation());
 
 async function initMap() {
     try {
-        const [planetsData, connectionsData] = await Promise.all([fetchCSV(PLANETS_CSV_URL), fetchCSV(CONNECTIONS_CSV_URL)]);
+        const [planetsData, connectionsData, objectsData] = await Promise.all([
+            fetchCSV(PLANETS_CSV_URL), 
+            fetchCSV(CONNECTIONS_CSV_URL),
+            fetchCSV(OBJECTS_CSV_URL)
+        ]);
         
         planetsList = planetsData.filter(p => p.id).map(p => {
             let factionName = p.faction ? p.faction.trim() : "";
@@ -352,7 +360,6 @@ async function initMap() {
             clip.appendChild(clipPath);
             defGroup.appendChild(clip);
 
-            // Базовая заливка ячейки (без толстой обводки)
             const bg = document.createElementNS('http://www.w3.org/2000/svg', 'path');
             bg.setAttribute('d', pathData);
             bg.setAttribute('class', 'voronoi-bg');
@@ -362,12 +369,12 @@ async function initMap() {
             } else {
                 bg.style.fill = factionInfo.secondaryColor;
                 bg.style.stroke = factionInfo.secondaryColor;
-                bg.style.strokeWidth = "1px"; // Тонкая базовая обводка
+                bg.style.strokeWidth = "1px"; 
             }
             voronoiLayer.appendChild(bg);
 
             let borderPath = "";
-            let innerPath = ""; // Для закрашивания внутренних стыков
+            let innerPath = ""; 
 
             const poly = voronoi.cellPolygon(i);
             if (!isNeutral && poly) {
@@ -402,17 +409,15 @@ async function initMap() {
                 }
             }
 
-            // Отрисовываем внутренние "скрывающие" линии для заделывания пиксельных щелей
             if (innerPath) {
                 const innerBorder = document.createElementNS('http://www.w3.org/2000/svg', 'path');
                 innerBorder.setAttribute('d', innerPath);
                 innerBorder.style.stroke = factionInfo.secondaryColor;
                 innerBorder.style.fill = "none";
-                innerBorder.style.strokeWidth = "2.5"; // Толстая линия точно по центру стыка ячеек одной фракции
+                innerBorder.style.strokeWidth = "2.5"; 
                 voronoiLayer.appendChild(innerBorder);
             }
 
-            // Отрисовываем главную границу фракции с отсечением по маске, чтобы она не вылезала наружу
             if (borderPath) {
                 const border = document.createElementNS('http://www.w3.org/2000/svg', 'path');
                 border.setAttribute('d', borderPath);
@@ -508,7 +513,6 @@ async function initMap() {
 
             circle.addEventListener('mouseover', (e) => {
                 hoverRing.style.display = 'block';
-                
                 hoverCoords.textContent = `X: ${planet.x} | Y: ${planet.y}`;
                 hoverCoords.style.left = `${e.pageX + 15}px`;
                 hoverCoords.style.top = `${e.pageY - 15}px`;
@@ -550,6 +554,123 @@ async function initMap() {
             });
 
             planetsLayer.appendChild(group);
+        });
+
+        // --- ЛОГИКА НОВЫХ ОБЪЕКТОВ ---
+        objectsData.forEach(obj => {
+            if (!obj.id) return;
+            const absX = (obj.x / 100) * MAP_SIZE;
+            const absY = (obj.y / 100) * MAP_SIZE;
+            const typeLower = (obj.type || "").toLowerCase();
+
+            let color = "#FFFFFF";
+            let iconPath = "";
+            let iconId = "";
+            let badgeText = "Особый объект";
+
+            if (typeLower.includes("пират")) {
+                color = "#AF2B1E";
+                iconPath = "assets/pirate.png";
+                iconId = "mask-pirate";
+                badgeText = "Пиратская база";
+            } else if (typeLower.includes("точка")) {
+                color = "#FFBF00";
+                iconPath = "assets/point.png";
+                iconId = "mask-point";
+                badgeText = "Точка интереса";
+            } else {
+                return; 
+            }
+
+            if (!document.getElementById(iconId)) {
+                const mask = document.createElementNS('http://www.w3.org/2000/svg', 'mask');
+                mask.setAttribute('id', iconId);
+                const img = document.createElementNS('http://www.w3.org/2000/svg', 'image');
+                img.setAttribute('href', iconPath);
+                img.setAttribute('width', '10');
+                img.setAttribute('height', '10');
+                img.setAttribute('x', '-5');
+                img.setAttribute('y', '-5');
+                mask.appendChild(img);
+                defGroup.appendChild(mask);
+            }
+
+            const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            group.setAttribute('transform', `translate(${absX}, ${absY})`);
+
+            const pulse = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            pulse.setAttribute('class', 'object-pulse');
+            pulse.style.stroke = color;
+            pulse.setAttribute('cx', 0);
+            pulse.setAttribute('cy', 0);
+            group.appendChild(pulse);
+
+            const iconRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            iconRect.setAttribute('x', '-5');
+            iconRect.setAttribute('y', '-5');
+            iconRect.setAttribute('width', '10');
+            iconRect.setAttribute('height', '10');
+            iconRect.setAttribute('fill', color);
+            iconRect.setAttribute('mask', `url(#${iconId})`);
+            iconRect.setAttribute('class', 'map-object-icon');
+            group.appendChild(iconRect);
+
+            const fontSize = 3.5;
+            const estTextWidth = obj.name.length * 2.7; 
+            const paddingX = 2;
+            const paddingY = 0.5;
+            const rectWidth = estTextWidth + paddingX * 2;
+            const rectHeight = fontSize + paddingY * 2;
+
+            const textBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            textBg.setAttribute('x', -rectWidth / 2);
+            textBg.setAttribute('y', 6);
+            textBg.setAttribute('width', rectWidth);
+            textBg.setAttribute('height', rectHeight);
+            textBg.setAttribute('rx', 1.5);
+            textBg.setAttribute('class', 'planet-label-bg');
+            group.appendChild(textBg);
+
+            const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            text.textContent = obj.name;
+            text.setAttribute('x', 0);
+            text.setAttribute('y', 9.5); 
+            text.setAttribute('text-anchor', 'middle');
+            text.setAttribute('class', 'planet-label');
+            text.style.setProperty('--faction-color', color);
+            group.appendChild(text);
+
+            iconRect.addEventListener('mouseover', (e) => {
+                hoverCoords.textContent = `X: ${obj.x} | Y: ${obj.y}`;
+                hoverCoords.style.left = `${e.pageX + 15}px`;
+                hoverCoords.style.top = `${e.pageY - 15}px`;
+                hoverCoords.style.display = 'block';
+            });
+
+            iconRect.addEventListener('mouseout', () => {
+                hoverCoords.style.display = 'none';
+            });
+
+            iconRect.addEventListener('click', (e) => {
+                e.stopPropagation();
+                
+                ttTitle.textContent = obj.name;
+                ttInfo.textContent = obj.info;
+                ttFactionBadge.textContent = badgeText;
+                ttFactionBadge.style.color = color;
+                
+                tooltip.style.borderColor = color; 
+                ttWiki.removeAttribute('href');
+                ttWiki.classList.add('disabled'); 
+
+                tooltip.style.left = `${e.pageX + 15}px`;
+                tooltip.style.top = `${e.pageY + 15}px`;
+                tooltip.style.display = 'block';
+
+                flyTo(absX, absY, scale);
+            });
+
+            objectsLayer.appendChild(group);
         });
 
         svg.addEventListener('click', () => tooltip.style.display = 'none');
