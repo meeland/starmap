@@ -71,7 +71,6 @@ function buildLegend() {
     });
 }
 
-// Сворачивание легенды
 document.getElementById('legend-header').addEventListener('click', () => {
     const panel = document.getElementById('legend-panel');
     const content = document.getElementById('faction-legend');
@@ -88,7 +87,6 @@ document.getElementById('legend-header').addEventListener('click', () => {
     }
 });
 
-// Управление слоями
 const btnLayerBare = document.getElementById('btn-layer-bare');
 const btnLayerPol = document.getElementById('btn-layer-pol');
 
@@ -323,6 +321,13 @@ async function initMap() {
         const delaunay = d3.Delaunay.from(points);
         const voronoi = delaunay.voronoi([0, 0, MAP_SIZE, MAP_SIZE]);
 
+        // ИСПРАВЛЕНИЕ: Defs для масок и clipPath теперь живут в корневом SVG и не скрываются вместе со слоем Voronoi
+        let defGroup = svg.querySelector('defs');
+        if (!defGroup) {
+            defGroup = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+            svg.appendChild(defGroup);
+        }
+
         const edges = new Map();
         planetsList.forEach((p, i) => {
             const poly = voronoi.cellPolygon(i);
@@ -342,9 +347,6 @@ async function initMap() {
                 edges.get(key).push({ cell: i, p1, p2 });
             }
         });
-
-        const defGroup = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-        voronoiLayer.appendChild(defGroup);
 
         planetsList.forEach((planet, i) => {
             const pathData = voronoi.renderCell(i);
@@ -534,9 +536,10 @@ async function initMap() {
                     ttInfo.textContent = planet.info;
                     ttFactionBadge.textContent = factionInfo.name;
                     ttFactionBadge.style.color = color;
-                    
                     tooltip.style.borderColor = secondaryColor; 
                     
+                    // ИСПРАВЛЕНИЕ: Возвращаем блок вики для планет
+                    ttWiki.style.display = 'block';
                     if (planet.wiki && planet.wiki.trim() !== "") {
                         ttWiki.href = planet.wiki;
                         ttWiki.classList.remove('disabled');
@@ -597,12 +600,15 @@ async function initMap() {
 
             const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
             group.setAttribute('transform', `translate(${absX}, ${absY})`);
+            group.setAttribute('class', 'map-object-group'); // Для стабильного hover эффекта
 
+            // ИСПРАВЛЕНИЕ: Базовый радиус для пульсации
             const pulse = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
             pulse.setAttribute('class', 'object-pulse');
             pulse.style.stroke = color;
             pulse.setAttribute('cx', 0);
             pulse.setAttribute('cy', 0);
+            pulse.setAttribute('r', 5); 
             group.appendChild(pulse);
 
             const iconRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
@@ -614,6 +620,14 @@ async function initMap() {
             iconRect.setAttribute('mask', `url(#${iconId})`);
             iconRect.setAttribute('class', 'map-object-icon');
             group.appendChild(iconRect);
+
+            // ИСПРАВЛЕНИЕ: Невидимая хит-зона (щит), чтобы мышка не проваливалась в прозрачные пиксели маски
+            const hitArea = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            hitArea.setAttribute('cx', 0);
+            hitArea.setAttribute('cy', 0);
+            hitArea.setAttribute('r', 7);
+            hitArea.setAttribute('fill', 'transparent');
+            group.appendChild(hitArea);
 
             const fontSize = 3.5;
             const estTextWidth = obj.name.length * 2.7; 
@@ -637,21 +651,22 @@ async function initMap() {
             text.setAttribute('y', 9.5); 
             text.setAttribute('text-anchor', 'middle');
             text.setAttribute('class', 'planet-label');
-            text.style.setProperty('--faction-color', color);
+            text.style.fill = color; // ИСПРАВЛЕНИЕ: Цвет названия объекта всегда жестко задан
             group.appendChild(text);
 
-            iconRect.addEventListener('mouseover', (e) => {
+            // События теперь висят на всей группе вместе с hitArea
+            group.addEventListener('mouseover', (e) => {
                 hoverCoords.textContent = `X: ${obj.x} | Y: ${obj.y}`;
                 hoverCoords.style.left = `${e.pageX + 15}px`;
                 hoverCoords.style.top = `${e.pageY - 15}px`;
                 hoverCoords.style.display = 'block';
             });
 
-            iconRect.addEventListener('mouseout', () => {
+            group.addEventListener('mouseout', () => {
                 hoverCoords.style.display = 'none';
             });
 
-            iconRect.addEventListener('click', (e) => {
+            group.addEventListener('click', (e) => {
                 e.stopPropagation();
                 
                 ttTitle.textContent = obj.name;
@@ -660,8 +675,7 @@ async function initMap() {
                 ttFactionBadge.style.color = color;
                 
                 tooltip.style.borderColor = color; 
-                ttWiki.removeAttribute('href');
-                ttWiki.classList.add('disabled'); 
+                ttWiki.style.display = 'none'; // ИСПРАВЛЕНИЕ: Полностью скрываем блок Вики
 
                 tooltip.style.left = `${e.pageX + 15}px`;
                 tooltip.style.top = `${e.pageY + 15}px`;
