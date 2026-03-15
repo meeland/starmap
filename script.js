@@ -154,25 +154,25 @@ function createRouteRing(x, y) {
     return ringGroup;
 }
 
-function handleRouteClick(planet) {
-    const absX2 = (planet.x / 100) * MAP_SIZE;
-    const absY2 = (planet.y / 100) * MAP_SIZE;
+function handleRouteClick(targetNode) {
+    const absX2 = (targetNode.x / 100) * MAP_SIZE;
+    const absY2 = (targetNode.y / 100) * MAP_SIZE;
 
     if (routeNodes.length === 0) {
-        routeNodes.push(planet);
+        routeNodes.push(targetNode);
         routeVisualElements.push(createRouteRing(absX2, absY2));
         updateRouteUI();
         return;
     }
 
     const last = routeNodes[routeNodes.length - 1];
-    if (last.id === planet.id) return;
+    if (last.id === targetNode.id) return;
 
     const conn = globalConnections.find(c => 
-        (c.from == last.id && c.to == planet.id) || (c.to == last.id && c.from == planet.id)
+        (c.from == last.id && c.to == targetNode.id) || (c.to == last.id && c.from == targetNode.id)
     );
 
-    const isTargetIsolated = !globalConnections.some(c => c.from == planet.id || c.to == planet.id);
+    const isTargetIsolated = !globalConnections.some(c => c.from == targetNode.id || c.to == targetNode.id);
     const isLastIsolated = !globalConnections.some(c => c.from == last.id || c.to == last.id);
 
     if (conn || isTargetIsolated || isLastIsolated) {
@@ -199,7 +199,7 @@ function handleRouteClick(planet) {
         routeVisualElements.push(line);
         routeVisualElements.push(createRouteRing(absX2, absY2));
 
-        routeNodes.push(planet);
+        routeNodes.push(targetNode);
         updateRouteUI();
     }
 }
@@ -321,7 +321,6 @@ async function initMap() {
         const delaunay = d3.Delaunay.from(points);
         const voronoi = delaunay.voronoi([0, 0, MAP_SIZE, MAP_SIZE]);
 
-        // ИСПРАВЛЕНИЕ: Defs для масок и clipPath теперь живут в корневом SVG и не скрываются вместе со слоем Voronoi
         let defGroup = svg.querySelector('defs');
         if (!defGroup) {
             defGroup = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
@@ -538,7 +537,6 @@ async function initMap() {
                     ttFactionBadge.style.color = color;
                     tooltip.style.borderColor = secondaryColor; 
                     
-                    // ИСПРАВЛЕНИЕ: Возвращаем блок вики для планет
                     ttWiki.style.display = 'block';
                     if (planet.wiki && planet.wiki.trim() !== "") {
                         ttWiki.href = planet.wiki;
@@ -559,7 +557,6 @@ async function initMap() {
             planetsLayer.appendChild(group);
         });
 
-        // --- ЛОГИКА НОВЫХ ОБЪЕКТОВ ---
         objectsData.forEach(obj => {
             if (!obj.id) return;
             const absX = (obj.x / 100) * MAP_SIZE;
@@ -600,9 +597,8 @@ async function initMap() {
 
             const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
             group.setAttribute('transform', `translate(${absX}, ${absY})`);
-            group.setAttribute('class', 'map-object-group'); // Для стабильного hover эффекта
+            group.setAttribute('class', 'map-object-group'); 
 
-            // ИСПРАВЛЕНИЕ: Базовый радиус для пульсации
             const pulse = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
             pulse.setAttribute('class', 'object-pulse');
             pulse.style.stroke = color;
@@ -621,7 +617,6 @@ async function initMap() {
             iconRect.setAttribute('class', 'map-object-icon');
             group.appendChild(iconRect);
 
-            // ИСПРАВЛЕНИЕ: Невидимая хит-зона (щит), чтобы мышка не проваливалась в прозрачные пиксели маски
             const hitArea = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
             hitArea.setAttribute('cx', 0);
             hitArea.setAttribute('cy', 0);
@@ -651,10 +646,10 @@ async function initMap() {
             text.setAttribute('y', 9.5); 
             text.setAttribute('text-anchor', 'middle');
             text.setAttribute('class', 'planet-label');
-            text.style.fill = color; // ИСПРАВЛЕНИЕ: Цвет названия объекта всегда жестко задан
+            text.style.fill = color; 
+            text.style.setProperty('--faction-color', color); 
             group.appendChild(text);
 
-            // События теперь висят на всей группе вместе с hitArea
             group.addEventListener('mouseover', (e) => {
                 hoverCoords.textContent = `X: ${obj.x} | Y: ${obj.y}`;
                 hoverCoords.style.left = `${e.pageX + 15}px`;
@@ -669,19 +664,23 @@ async function initMap() {
             group.addEventListener('click', (e) => {
                 e.stopPropagation();
                 
-                ttTitle.textContent = obj.name;
-                ttInfo.textContent = obj.info;
-                ttFactionBadge.textContent = badgeText;
-                ttFactionBadge.style.color = color;
-                
-                tooltip.style.borderColor = color; 
-                ttWiki.style.display = 'none'; // ИСПРАВЛЕНИЕ: Полностью скрываем блок Вики
+                if (isRoutingMode) {
+                    handleRouteClick(obj);
+                } else {
+                    ttTitle.textContent = obj.name;
+                    ttInfo.textContent = obj.info;
+                    ttFactionBadge.textContent = badgeText;
+                    ttFactionBadge.style.color = color;
+                    
+                    tooltip.style.borderColor = color; 
+                    ttWiki.style.display = 'none'; 
 
-                tooltip.style.left = `${e.pageX + 15}px`;
-                tooltip.style.top = `${e.pageY + 15}px`;
-                tooltip.style.display = 'block';
+                    tooltip.style.left = `${e.pageX + 15}px`;
+                    tooltip.style.top = `${e.pageY + 15}px`;
+                    tooltip.style.display = 'block';
 
-                flyTo(absX, absY, scale);
+                    flyTo(absX, absY, scale);
+                }
             });
 
             objectsLayer.appendChild(group);
