@@ -245,6 +245,10 @@ function flyTo(x, y, targetScale = 2) {
     requestAnimationFrame(animate);
 }
 
+// ==========================================
+// ОБРАБОТЧИКИ СОБЫТИЙ МЫШИ
+// ==========================================
+
 svg.addEventListener('mousedown', (e) => {
     if (e.button !== 0) return; 
     isDragging = true;
@@ -280,6 +284,82 @@ svg.addEventListener('wheel', (e) => {
 document.getElementById('btn-zoom-in').onclick = () => flyTo((window.innerWidth/2 - translateX)/scale, (window.innerHeight/2 - translateY)/scale, scale * 1.5);
 document.getElementById('btn-zoom-out').onclick = () => flyTo((window.innerWidth/2 - translateX)/scale, (window.innerHeight/2 - translateY)/scale, scale / 1.5);
 document.getElementById('btn-reset').onclick = () => flyTo(MAP_SIZE/2, MAP_SIZE/2, 0.5);
+
+// ==========================================
+// ПОДДЕРЖКА МОБИЛЬНЫХ УСТРОЙСТВ (TOUCH EVENTS)
+// ==========================================
+
+let initialPinchDistance = null;
+let initialScale = 1;
+
+function getPinchDistance(touches) {
+    return Math.hypot(
+        touches[0].clientX - touches[1].clientX,
+        touches[0].clientY - touches[1].clientY
+    );
+}
+
+function getPinchCenter(touches) {
+    return {
+        x: (touches[0].clientX + touches[1].clientX) / 2,
+        y: (touches[0].clientY + touches[1].clientY) / 2
+    };
+}
+
+svg.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 1) {
+        isDragging = true;
+        startX = e.touches[0].clientX - translateX;
+        startY = e.touches[0].clientY - translateY;
+    } else if (e.touches.length === 2) {
+        isDragging = false; 
+        initialPinchDistance = getPinchDistance(e.touches);
+        initialScale = scale;
+    }
+}, { passive: false });
+
+window.addEventListener('touchmove', (e) => {
+    if (e.touches.length === 1 && isDragging) {
+        translateX = e.touches[0].clientX - startX;
+        translateY = e.touches[0].clientY - startY;
+        updateTransform();
+    } else if (e.touches.length === 2 && initialPinchDistance) {
+        e.preventDefault(); 
+        
+        const currentDistance = getPinchDistance(e.touches);
+        const zoomFactor = currentDistance / initialPinchDistance;
+        let newScale = Math.max(0.1, Math.min(initialScale * zoomFactor, 8));
+
+        const center = getPinchCenter(e.touches);
+        const rect = svg.getBoundingClientRect();
+        const mouseX = center.x - rect.left;
+        const mouseY = center.y - rect.top;
+
+        const actualZoomFactor = newScale / scale;
+
+        translateX = mouseX - (mouseX - translateX) * actualZoomFactor;
+        translateY = mouseY - (mouseY - translateY) * actualZoomFactor;
+        scale = newScale;
+        
+        updateTransform();
+    }
+}, { passive: false });
+
+window.addEventListener('touchend', (e) => {
+    if (e.touches.length < 2) {
+        initialPinchDistance = null;
+    }
+    if (e.touches.length === 0) {
+        isDragging = false;
+    } else if (e.touches.length === 1) {
+        startX = e.touches[0].clientX - translateX;
+        startY = e.touches[0].clientY - translateY;
+    }
+});
+
+// ==========================================
+// ИНИЦИАЛИЗАЦИЯ И РЕНДЕР КАРТЫ
+// ==========================================
 
 function fetchCSV(url) {
     return new Promise((resolve, reject) => {
