@@ -788,7 +788,6 @@ function setupSearch() {
     const resultsDiv = document.getElementById('search-results');
     const btnSearchToggle = document.getElementById('btn-search-toggle');
 
-    // Логика кнопки-лупы для телефонов
     if (btnSearchToggle) {
         btnSearchToggle.addEventListener('click', () => {
             searchInputWrapper.classList.toggle('active');
@@ -815,16 +814,13 @@ function setupSearch() {
                 div.className = 'search-item';
                 div.textContent = match.name;
                 div.onclick = () => {
-                    // Очищаем ввод и результаты
                     searchInput.value = '';
                     resultsDiv.style.display = 'none';
                     
-                    // АВТОЗАКРЫТИЕ ПАНЕЛИ НА МОБИЛЬНЫХ
                     if (searchInputWrapper && searchInputWrapper.classList.contains('active')) {
                         searchInputWrapper.classList.remove('active');
                     }
 
-                    // Летим к планете
                     const absX = (match.x / 100) * MAP_SIZE;
                     const absY = (match.y / 100) * MAP_SIZE;
                     flyTo(absX, absY, 3);
