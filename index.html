@@ -28,8 +28,11 @@
             </div>
             
             <div class="search-box">
-                <input type="text" id="planet-search" placeholder="Поиск системы..." autocomplete="off">
-                <div id="search-results"></div>
+                <button id="btn-search-toggle" title="Поиск систем">🔍</button>
+                <div id="search-wrap">
+                    <input type="text" id="planet-search" placeholder="Поиск системы..." autocomplete="off">
+                    <div id="search-results"></div>
+                </div>
             </div>
         </div>
 
@@ -87,7 +90,6 @@
                 <g id="connections-layer"></g>
                 <g id="route-visual-layer"></g>
                 <g id="planets-layer"></g>
-                <g id="objects-layer"></g>
             </g>
         </svg>
     </div>
