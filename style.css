@@ -259,18 +259,46 @@ input {
     pointer-events: none; display: none; z-index: 150;
 }
 
+/* АНИМАЦИЯ ОСОБЫХ ОБЪЕКТОВ */
+@keyframes pulseWave {
+    0% { transform: scale(1); opacity: 1; stroke-width: 1.5; }
+    100% { transform: scale(3.2); opacity: 0; stroke-width: 0; }
+}
+
+.object-pulse {
+    fill: none;
+    transform-origin: center;
+    transform-box: fill-box;
+    animation: pulseWave 3s ease-out infinite;
+    pointer-events: none;
+}
+
+.map-object-icon {
+    transition: transform 0.1s;
+    transform-origin: center;
+    transform-box: fill-box;
+    pointer-events: none; 
+}
+
+.map-object-group {
+    cursor: pointer;
+}
+
+.map-object-group:hover .map-object-icon {
+    transform: scale(1.3);
+}
 
 /* ==========================================
    АДАПТАЦИЯ ИНТЕРФЕЙСА ДЛЯ МОБИЛЬНЫХ
    ========================================== */
 @media (max-width: 768px) {
-    /* 1. Скрываем панель с органами управления и счётчиком масштаба */
-    .hud-panel.bottom-right {
+    /* Скрываем панель с органами управления и счётчиком масштаба */
+    .zoom-panel {
         display: none !important;
     }
 
-    /* 3. Перемещаем панель поиска со слоями в левый нижний угол */
-    .hud-panel.top-right {
+    /* Перемещаем панель поиска со слоями в левый нижний угол */
+    .search-layers-panel {
         top: auto !important;
         bottom: 20px !important;
         left: 20px !important;
@@ -278,20 +306,20 @@ input {
         background: transparent !important;
         border: none !important;
         padding: 0 !important;
-        flex-direction: row !important; /* Слои и кнопка поиска рядом */
+        flex-direction: row !important; 
         z-index: 1000;
     }
 
-    /* 2. Поиск становится кнопкой */
+    /* Поиск становится кнопкой */
     #btn-search-toggle {
         display: block !important;
     }
 
-    /* Скрываем само поле ввода по умолчанию, показываем только при нажатии на кнопку */
+    /* Скрываем само поле ввода по умолчанию, показываем только при нажатии */
     #search-wrap {
         display: none;
         position: absolute;
-        bottom: 50px; /* Поднимаем над кнопками */
+        bottom: 50px; 
         left: 0;
         width: calc(100vw - 40px);
         max-width: 300px;
@@ -334,7 +362,7 @@ input {
         max-width: 300px;
     }
     
-    /* Тултип не должен улетать за пределы экрана */
+    /* Тултип по центру внизу */
     #tooltip {
         position: fixed !important;
         bottom: 20px !important;
