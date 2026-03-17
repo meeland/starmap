@@ -1,56 +1,54 @@
-/* ==========================================
-   ОСНОВНЫЕ СТИЛИ И КАРТА
-   ========================================== */
-body, html {
+:root {
+    --bg-color: #03050a;
+    --hud-bg: #1b1926;        
+    --hud-secondary: #13121a; 
+    --hud-cyan: #0c85e2;      
+}
+
+body {
     margin: 0;
-    padding: 0;
-    width: 100%;
-    height: 100%;
-    background-color: #050510;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    color: #e0e0e0;
-    overflow: hidden; 
-    touch-action: none; 
+    background-color: var(--bg-color);
+    color: #ffffff;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    overflow: hidden;
+    user-select: none;
 }
 
 #map-container {
-    width: 100%;
-    height: 100%;
-    position: relative;
-    cursor: grab;
+    width: 100vw;
+    height: 100vh;
+    position: absolute;
+    top: 0;
+    left: 0;
+    cursor: crosshair;
+    z-index: 1;
 }
 
-#map-container:active {
-    cursor: grabbing;
-}
+#map-container:active { cursor: grabbing; }
 
-svg {
-    width: 100%;
-    height: 100%;
-    display: block;
-}
+svg { width: 100%; height: 100%; display: block; }
 
-/* ==========================================
-   СЛОИ И ЭЛЕМЕНТЫ SVG
-   ========================================== */
-.connection {
-    stroke-width: 1.5;
-    opacity: 0.6;
-}
+.planet-circle { cursor: pointer; transition: r 0.1s; }
+.planet-circle:hover { r: 5; }
 
-.planet-label-bg {
-    fill: rgba(0, 0, 0, 0.7);
+.connection { stroke-width: 0.84; }
+
+.voronoi-bg { pointer-events: none; }
+.voronoi-border { 
+    pointer-events: none; 
+    stroke-linecap: square; 
 }
 
 .planet-label {
-    font-size: 3.5px;
-    fill: #ffffff;
+    font-size: 3.5px; 
+    fill: #ccc;
     pointer-events: none;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    transition: fill 0.3s;
 }
 
-.political-mode .planet-label {
-    fill: var(--faction-color);
+.planet-label-bg {
+    fill: rgba(0, 0, 0, 0.6);
+    pointer-events: none;
 }
 
 .hide-labels .planet-label,
@@ -58,412 +56,244 @@ svg {
     display: none;
 }
 
-.voronoi-bg {
-    opacity: 0.3;
+.political-mode .planet-label {
+    fill: var(--faction-color) !important;
 }
 
-/* ==========================================
-   ИНТЕРФЕЙС (ПОЛЬЗОВАТЕЛЬСКИЙ СЛОЙ)
-   ========================================== */
+.hover-ring { pointer-events: none; }
+
 #ui-layer {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none; 
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none; z-index: 10;
 }
 
-#ui-layer > * {
-    pointer-events: auto; 
+.hud-panel {
+    position: absolute; 
+    background: var(--hud-bg); 
+    border: 1px solid var(--hud-cyan);
+    border-radius: 4px; pointer-events: auto;
 }
 
-/* Элементы управления масштабом */
-.zoom-controls {
-    position: absolute;
-    bottom: 20px;
-    right: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-}
-
-.zoom-btn {
-    width: 30px;
-    height: 30px;
-    background: rgba(30, 30, 30, 0.8);
-    border: 1px solid #555;
-    color: white;
-    font-size: 16px;
-    cursor: pointer;
-    border-radius: 4px;
-}
-
-.zoom-btn:hover {
-    background: #444;
-}
-
-#zoom-level {
-    position: absolute;
-    bottom: 20px;
-    right: 60px;
-    background: rgba(0, 0, 0, 0.6);
-    padding: 5px 10px;
-    border-radius: 4px;
-    font-family: monospace;
-}
-
-/* Кнопки переключения слоев */
-.layer-controls {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    display: flex;
-    gap: 10px;
-    background: rgba(20, 20, 20, 0.8);
-    padding: 5px;
-    border-radius: 6px;
-    border: 1px solid #444;
-}
-
-.layer-btn {
-    background: #222;
-    border: 1px solid #555;
-    color: #ddd;
-    padding: 5px 10px;
-    cursor: pointer;
-    border-radius: 4px;
-    font-size: 14px;
-    transition: all 0.2s;
-}
-
-.layer-btn:hover {
-    background: #444;
-}
-
-.layer-btn.active {
-    background: #3498db;
-    color: white;
-    border-color: #2980b9;
-}
-
-/* Плавающие координаты */
-#hover-coords {
-    position: absolute;
-    background: rgba(0,0,0,0.8);
-    border: 1px solid #555;
-    color: #fff;
-    padding: 4px 8px;
-    font-size: 12px;
-    pointer-events: none;
-    border-radius: 4px;
-    z-index: 100;
-}
-
-/* Поиск по десктопу (по умолчанию лупа скрыта) */
-#search-container {
-    position: absolute;
-    top: 20px;
-    left: 20px;
-    width: 250px;
-    background: rgba(20, 20, 20, 0.8);
-    border: 1px solid #444;
-    border-radius: 4px;
-    z-index: 100;
-}
-
-#btn-search-toggle {
-    display: none;
-}
-
-#search-input-wrapper {
-    display: block;
-}
-
-#planet-search {
-    width: 100%;
-    box-sizing: border-box;
-    padding: 8px;
-    background: transparent;
-    border: none;
-    color: white;
-    outline: none;
-}
-
-#search-results {
-    max-height: 200px;
-    overflow-y: auto;
-    border-top: 1px solid #444;
-}
-
-.search-item {
-    padding: 8px;
-    cursor: pointer;
-    border-bottom: 1px solid #333;
-}
-
-.search-item:hover {
-    background: #333;
-}
-
-/* Тултип (информация об объекте) */
-#tooltip {
-    position: absolute;
-    background: rgba(20, 20, 20, 0.95);
-    border: 2px solid #555;
-    border-radius: 8px;
-    padding: 15px;
-    width: 300px;
-    color: #fff;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
-    z-index: 200;
-}
-
-#tt-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid #444;
-    padding-bottom: 8px;
-    margin-bottom: 8px;
-}
-
-#tt-title {
-    margin: 0;
-    font-size: 18px;
-}
-
-#tt-faction-badge {
-    font-size: 12px;
-    font-weight: bold;
-    padding: 2px 6px;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 4px;
-}
-
-#tt-info {
-    font-size: 14px;
-    line-height: 1.4;
-    margin-bottom: 10px;
-}
-
-#tt-wiki {
-    display: inline-block;
-    color: #3498db;
-    text-decoration: none;
-    font-size: 13px;
-    margin-top: 5px;
-}
-
-#tt-wiki:hover {
-    text-decoration: underline;
-}
-
-#tt-wiki.disabled {
-    color: #555;
-    pointer-events: none;
-    text-decoration: none;
-}
-
-/* Панель маршрута */
-#route-panel {
-    position: absolute;
-    top: 80px;
-    right: 20px;
-    background: rgba(20, 20, 20, 0.9);
-    border: 1px solid #444;
-    border-radius: 6px;
-    padding: 10px;
-    width: 250px;
-    display: none; 
-}
-
-#route-panel.open {
-    display: block;
-}
-
-.route-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 10px;
-}
-
-.route-header h3 {
-    margin: 0;
-    font-size: 14px;
-}
-
-.route-stats {
-    font-size: 13px;
-    margin-bottom: 10px;
-    line-height: 1.5;
-}
-
-#btn-reset-route {
-    width: 100%;
-    background: #e74c3c;
-    color: white;
-    border: none;
-    padding: 6px;
-    border-radius: 4px;
-    cursor: pointer;
-}
-
-#btn-reset-route:hover {
-    background: #c0392b;
-}
-
-/* Маршрутные линии на SVG */
-.route-line {
-    stroke: #ffffff;
-    stroke-width: 2.5;
-    stroke-dasharray: 6 4;
-    animation: dash 20s linear infinite;
-    pointer-events: none;
-}
-
-@keyframes dash {
-    to { stroke-dashoffset: -100; }
-}
-
-/* Панель легенды */
-#legend-panel {
-    position: absolute;
-    bottom: 20px;
-    left: 20px;
-    background: rgba(20, 20, 20, 0.85);
-    border: 1px solid #444;
-    border-radius: 6px;
-    width: 250px;
+.legend { 
+    width: auto; 
+    min-width: 280px; 
+    max-width: 400px; 
+    padding: 0; 
+    overflow: hidden;
 }
 
 #legend-header {
-    padding: 10px;
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--hud-cyan);
+    padding: 12px 15px;
+    margin: 0;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    cursor: pointer;
-    background: rgba(40, 40, 40, 0.5);
-    border-radius: 6px 6px 0 0;
+    letter-spacing: 1px;
+    font-weight: bold;
+    background: var(--hud-bg);
+    border-bottom: 1px solid rgba(12, 133, 226, 0.3);
+    transition: background 0.2s;
 }
 
-#legend-header h3 {
-    margin: 0;
-    font-size: 14px;
-}
+#legend-header:hover { background: var(--hud-secondary); }
 
-#faction-legend {
-    padding: 10px;
-    max-height: 200px;
-    overflow-y: auto;
-}
+.legend.collapsed #legend-header { border-bottom: none; }
+
+#faction-legend { padding: 15px; }
 
 .legend-block {
-    display: flex;
-    align-items: center;
-    padding: 4px 8px;
-    margin-bottom: 5px;
-    border-radius: 4px;
-    font-size: 13px;
-    font-weight: bold;
-    border: 1px solid transparent;
+    display: flex; align-items: center; width: 100%; padding: 8px 15px; margin-bottom: 8px;
+    border-radius: 4px; font-size: 11px; text-align: left;
+    box-sizing: border-box; border: 1px solid; letter-spacing: 0.5px;
 }
+.legend-block:last-child { margin-bottom: 0; }
 
 .faction-count {
-    min-width: 20px;
+    padding: 2px 0; 
+    border-radius: 3px; 
+    font-weight: bold; 
+    font-size: 11px; 
+    margin-right: 10px;
+    width: 28px; 
     text-align: center;
-    border-radius: 10px;
-    padding: 2px 5px;
-    margin-right: 8px;
-    font-size: 11px;
+    flex-shrink: 0;
 }
 
-#legend-panel.collapsed #legend-header {
-    border-radius: 6px;
+.top-left { top: 20px; left: 20px; }
+.top-right { top: 20px; right: 20px; }
+.bottom-left { bottom: 20px; left: 20px; }
+.bottom-right { bottom: 20px; right: 20px; padding: 15px; display: flex; flex-direction: column; align-items: flex-end; width: 172px; box-sizing: border-box; }
+
+.layer-controls {
+    display: flex; gap: 5px; background: var(--hud-secondary);
+    border: 1px solid var(--hud-cyan); padding: 3px; border-radius: 4px;
+}
+
+.layer-btn {
+    background: transparent; border: none; color: var(--hud-cyan);
+    font-size: 16px; width: 30px; height: 30px; cursor: pointer;
+    transition: 0.2s; border-radius: 2px;
+}
+.layer-btn:hover, .layer-btn.active { background: var(--hud-cyan); color: var(--hud-bg); }
+
+#btn-toggle-route {
+    position: absolute; bottom: 135px; right: 20px; width: 172px; 
+    box-sizing: border-box; background: var(--hud-secondary);
+    border: 1px solid var(--hud-cyan); color: var(--hud-cyan);
+    padding: 10px 15px; cursor: pointer; font-family: inherit;
+    font-size: 12px; border-radius: 4px; transition: 0.2s;
+    pointer-events: auto; z-index: 102; font-weight: bold;
+}
+#btn-toggle-route:hover, #btn-toggle-route.active { background: var(--hud-cyan); color: var(--hud-bg); }
+
+#route-panel {
+    position: absolute; bottom: 180px; right: 20px; background: var(--hud-bg);
+    border: 1px solid var(--hud-cyan); border-radius: 4px; width: 230px; z-index: 101;
+    pointer-events: none; transform: scaleY(0); transform-origin: bottom right; 
+    opacity: 0; transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.3s ease;
+}
+#route-panel.open { transform: scaleY(1); opacity: 1; pointer-events: auto; }
+.route-panel-content { padding: 15px; }
+
+.route-header { color: var(--hud-cyan); font-size: 14px; margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 5px; font-weight: bold; }
+.route-stat { font-size: 11px; margin-bottom: 6px; color: #ccc; }
+.route-stat span { color: #fff; float: right; font-weight: bold; }
+
+#btn-reset-route {
+    width: 100%; margin-top: 10px; background: var(--hud-secondary);
+    border: 1px solid #ff4444; color: #ff4444; padding: 6px; cursor: pointer;
+    font-family: inherit; border-radius: 4px; transition: 0.2s; font-weight: bold;
+}
+#btn-reset-route:hover { background: #ff4444; color: #fff; }
+
+.route-line {
+    stroke: #00ffcc; stroke-width: 1.5; stroke-dasharray: 6;
+    animation: routeFlow 1s linear infinite; pointer-events: none;
+}
+.route-ring {
+    fill: none; stroke: #00ffcc; transform-origin: center;
+    transform-box: fill-box; animation: spinRing 4s linear infinite; pointer-events: none;
+}
+
+@keyframes routeFlow { from { stroke-dashoffset: 12; } to { stroke-dashoffset: 0; } }
+@keyframes spinRing { to { transform: rotate(360deg); } }
+
+.search-box { position: relative; width: 175px; }
+input {
+    width: 100%; background: var(--hud-secondary); border: 1px solid var(--hud-cyan);
+    color: var(--hud-cyan); padding: 8px; font-family: inherit;
+    outline: none; box-sizing: border-box;
+}
+#search-results {
+    position: absolute; top: 100%; left: 0; width: 100%;
+    background: var(--hud-bg); border: 1px solid var(--hud-cyan);
+    border-top: none; display: none; max-height: 200px; overflow-y: auto;
+}
+.search-item { padding: 8px; cursor: pointer; font-size: 12px; }
+.search-item:hover { background: var(--hud-secondary); }
+
+.controls { display: flex; gap: 10px; margin-bottom: 10px; }
+.controls button {
+    display: block; width: 40px; height: 40px; background: var(--hud-secondary);
+    border: 1px solid var(--hud-cyan); color: var(--hud-cyan); font-size: 20px;
+    cursor: pointer; transition: 0.2s; border-radius: 4px; 
+}
+.controls button:hover { background: var(--hud-cyan); color: var(--hud-bg); }
+
+.telemetry { font-size: 14px; letter-spacing: 1px; color: var(--hud-cyan); text-align: right; font-weight: bold; }
+
+#tooltip {
+    position: absolute; background: var(--hud-bg);
+    border: 1px solid var(--hud-cyan); border-radius: 4px;
+    pointer-events: auto; display: none; width: 300px; z-index: 100;
+    overflow: hidden; 
+}
+.tt-main-content { padding: 15px 20px; }
+#tt-title { margin: 0; color: #ffffff; font-size: 12px; font-weight: normal; text-align: left; font-weight: bold; }
+#tt-faction-badge { font-size: 12px; font-weight: normal; text-align: left; margin-top: 4px; display: block; }
+
+#tt-info { 
+    background-color: var(--hud-secondary); padding: 10px 15px; border-radius: 6px;
+    font-size: 11px; line-height: 1.5; color: #ccc; 
+    margin: 10px -10px 0 -10px; box-sizing: border-box;
+}
+
+#tt-wiki {
+    display: block; background: var(--hud-secondary); color: var(--hud-cyan);
+    text-align: left; padding: 10px 20px; font-size: 11px; text-decoration: none; font-weight: bold;
+    border-top: 1px solid rgba(12, 133, 226, 0.3); transition: 0.2s;
+}
+#tt-wiki:hover { background: #13243a; color: #fff; }
+#tt-wiki.disabled {
+    color: #444; background: #111; pointer-events: none; border-top: 1px solid #333;
+}
+
+#hover-coords {
+    position: absolute; background: rgba(0, 0, 0, 0.8);
+    padding: 4px 8px; border-radius: 4px;
+    font-size: 10px; color: #fff;
+    pointer-events: none; display: none; z-index: 150;
+}
+
+/* --- ИСПРАВЛЕННАЯ АНИМАЦИЯ ОСОБЫХ ОБЪЕКТОВ --- */
+@keyframes pulseWave {
+    0% { transform: scale(1); opacity: 1; stroke-width: 1.5; }
+    100% { transform: scale(3.2); opacity: 0; stroke-width: 0; }
+}
+
+.object-pulse {
+    fill: none;
+    transform-origin: center;
+    transform-box: fill-box;
+    animation: pulseWave 3s ease-out infinite;
+    pointer-events: none;
+}
+
+.map-object-icon {
+    transition: transform 0.1s;
+    transform-origin: center;
+    transform-box: fill-box; /* Жестко фиксируем центр трансформации для SVG */
+    pointer-events: none; /* События мыши будет ловить отдельный невидимый круг */
+}
+
+.map-object-group {
+    cursor: pointer;
+}
+
+.map-object-group:hover .map-object-icon {
+    transform: scale(1.3);
 }
 
 /* ==========================================
-   АДАПТАЦИЯ ИНТЕРФЕЙСА (МОБИЛЬНЫЕ УСТРОЙСТВА)
+   ГЛОБАЛЬНЫЕ ПРАВИЛА ДЛЯ МОБИЛЬНЫХ
+   ========================================== */
+body, html {
+    overflow: hidden; /* Запрещаем скролл самой веб-страницы */
+    touch-action: none; /* Запрещаем системные жесты браузера, вроде обновления свайпом вниз */
+}
+
+/* ==========================================
+   АДАПТАЦИЯ ИНТЕРФЕЙСА (MEDIA QUERIES)
    ========================================== */
 @media (max-width: 768px) {
-    /* 1. Скрываем зум-контролы и счетчик */
-    .zoom-controls,
-    #zoom-level,
-    #hover-coords {
-        display: none !important;
-    }
-
-    /* 2. Кнопки слоев переносим в левый нижний угол */
-    .layer-controls {
-        position: fixed !important;
-        top: auto !important;
-        bottom: 20px !important;
-        left: 10px !important;
-        right: auto !important;
-        display: flex;
-        gap: 8px;
-        z-index: 1000;
-        background: transparent !important;
-        padding: 0 !important;
-        box-shadow: none !important;
-        border: none !important;
-    }
-
-    .layer-btn {
-        width: 44px; 
-        height: 44px;
-        padding: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 16px;
-    }
-
-    /* 3. Панель поиска: левый нижний угол, над слоями */
+    /* Поиск: на всю ширину экрана вверху */
     #search-container {
-        position: fixed !important;
-        top: auto !important;
-        bottom: 75px !important; 
-        left: 10px !important;
-        right: auto !important;
-        width: auto !important;
-        display: flex;
-        flex-direction: row; 
-        align-items: flex-start;
-        z-index: 1000;
-        background: transparent !important; 
-        border: none !important;
-        box-shadow: none !important;
-        padding: 0 !important;
-    }
-
-    #btn-search-toggle {
-        display: flex !important; 
-    }
-
-    #search-input-wrapper {
-        display: none;
-        margin-left: 10px;
-        width: calc(100vw - 80px); 
-        max-width: 250px;
-        background: rgba(20, 20, 20, 0.95);
-        border: 1px solid #444;
-        border-radius: 4px;
-        padding: 5px;
-    }
-
-    #search-input-wrapper.active {
-        display: block;
+        top: 10px;
+        left: 10px;
+        right: 10px;
+        width: auto;
     }
     
     #planet-search {
         width: 100%;
         box-sizing: border-box;
-        font-size: 16px; /* Защита от автозума в iOS Safari */
+        font-size: 16px; 
     }
 
-    /* 4. Тултип (информация): фиксируем внизу по центру */
+    /* Тултип: фиксируем внизу по центру */
     #tooltip {
         position: fixed !important; 
         top: auto !important;
@@ -474,10 +304,10 @@ svg {
         max-width: 350px;
         max-height: 35vh;
         overflow-y: auto; 
-        box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.8);
+        box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.5);
     }
 
-    /* 5. Плавающие панели (Маршрут, Легенда) */
+    /* Плавающие панели: делаем компактнее */
     #route-panel, #legend-panel {
         width: calc(100vw - 20px);
         max-width: none;
@@ -487,14 +317,37 @@ svg {
         right: 10px;
     }
 
+    /* Панель маршрута прижимаем вниз, чтобы было удобнее тянуться пальцем */
     #route-panel {
         top: auto;
-        bottom: 130px; 
+        bottom: 70px; 
     }
-    
-    #legend-panel {
-        bottom: 20px; 
+
+    /* Кнопки слоев: группируем компактно снизу слева */
+    .layer-controls {
+        top: auto;
+        bottom: 20px;
         left: 10px;
-        width: calc(100vw - 20px);
+        display: flex;
+        gap: 5px;
+    }
+
+    .layer-btn {
+        width: 40px;
+        height: 40px;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Кнопки зума скрываем (работает щипок) */
+    .zoom-controls {
+        display: none; 
+    }
+
+    /* Блок с координатами скрываем (на мобильных палец его всё равно закрывает) */
+    #hover-coords {
+        display: none !important;
     }
 }
