@@ -206,7 +206,7 @@ function handleRouteClick(targetNode) {
 
 function updateTransform() {
     mapGroup.setAttribute('transform', `translate(${translateX}, ${translateY}) scale(${scale})`);
-    zoomLevelText.textContent = scale.toFixed(2);
+    if(zoomLevelText) { zoomLevelText.textContent = scale.toFixed(2); }
     
     if (scale <= 0.90) {
         planetsLayer.classList.add('hide-labels');
@@ -248,7 +248,6 @@ function flyTo(x, y, targetScale = 2) {
 // ==========================================
 // ОБРАБОТЧИКИ СОБЫТИЙ МЫШИ
 // ==========================================
-
 svg.addEventListener('mousedown', (e) => {
     if (e.button !== 0) return; 
     isDragging = true;
@@ -281,14 +280,19 @@ svg.addEventListener('wheel', (e) => {
     updateTransform();
 }, { passive: false });
 
-document.getElementById('btn-zoom-in').onclick = () => flyTo((window.innerWidth/2 - translateX)/scale, (window.innerHeight/2 - translateY)/scale, scale * 1.5);
-document.getElementById('btn-zoom-out').onclick = () => flyTo((window.innerWidth/2 - translateX)/scale, (window.innerHeight/2 - translateY)/scale, scale / 1.5);
-document.getElementById('btn-reset').onclick = () => flyTo(MAP_SIZE/2, MAP_SIZE/2, 0.5);
+if(document.getElementById('btn-zoom-in')) {
+    document.getElementById('btn-zoom-in').onclick = () => flyTo((window.innerWidth/2 - translateX)/scale, (window.innerHeight/2 - translateY)/scale, scale * 1.5);
+}
+if(document.getElementById('btn-zoom-out')) {
+    document.getElementById('btn-zoom-out').onclick = () => flyTo((window.innerWidth/2 - translateX)/scale, (window.innerHeight/2 - translateY)/scale, scale / 1.5);
+}
+if(document.getElementById('btn-reset')) {
+    document.getElementById('btn-reset').onclick = () => flyTo(MAP_SIZE/2, MAP_SIZE/2, 0.5);
+}
 
 // ==========================================
 // ПОДДЕРЖКА МОБИЛЬНЫХ УСТРОЙСТВ (TOUCH EVENTS)
 // ==========================================
-
 let initialPinchDistance = null;
 let initialScale = 1;
 
@@ -357,10 +361,10 @@ window.addEventListener('touchend', (e) => {
     }
 });
 
+
 // ==========================================
 // ИНИЦИАЛИЗАЦИЯ И РЕНДЕР КАРТЫ
 // ==========================================
-
 function fetchCSV(url) {
     return new Promise((resolve, reject) => {
         Papa.parse(url, { download: true, header: true, complete: results => resolve(results.data), error: err => reject(err) });
@@ -594,15 +598,17 @@ async function initMap() {
 
             circle.addEventListener('mouseover', (e) => {
                 hoverRing.style.display = 'block';
-                hoverCoords.textContent = `X: ${planet.x} | Y: ${planet.y}`;
-                hoverCoords.style.left = `${e.pageX + 15}px`;
-                hoverCoords.style.top = `${e.pageY - 15}px`;
-                hoverCoords.style.display = 'block';
+                if(hoverCoords) {
+                    hoverCoords.textContent = `X: ${planet.x} | Y: ${planet.y}`;
+                    hoverCoords.style.left = `${e.pageX + 15}px`;
+                    hoverCoords.style.top = `${e.pageY - 15}px`;
+                    hoverCoords.style.display = 'block';
+                }
             });
 
             circle.addEventListener('mouseout', () => {
                 hoverRing.style.display = 'none';
-                hoverCoords.style.display = 'none';
+                if(hoverCoords) hoverCoords.style.display = 'none';
             });
 
             circle.addEventListener('click', (e) => {
@@ -637,6 +643,9 @@ async function initMap() {
             planetsLayer.appendChild(group);
         });
 
+        // ==========================================
+        // ЛОГИКА ОСОБЫХ ОБЪЕКТОВ
+        // ==========================================
         objectsData.forEach(obj => {
             if (!obj.id) return;
             const absX = (obj.x / 100) * MAP_SIZE;
@@ -731,14 +740,16 @@ async function initMap() {
             group.appendChild(text);
 
             group.addEventListener('mouseover', (e) => {
-                hoverCoords.textContent = `X: ${obj.x} | Y: ${obj.y}`;
-                hoverCoords.style.left = `${e.pageX + 15}px`;
-                hoverCoords.style.top = `${e.pageY - 15}px`;
-                hoverCoords.style.display = 'block';
+                if(hoverCoords) {
+                    hoverCoords.textContent = `X: ${obj.x} | Y: ${obj.y}`;
+                    hoverCoords.style.left = `${e.pageX + 15}px`;
+                    hoverCoords.style.top = `${e.pageY - 15}px`;
+                    hoverCoords.style.display = 'block';
+                }
             });
 
             group.addEventListener('mouseout', () => {
-                hoverCoords.style.display = 'none';
+                if(hoverCoords) hoverCoords.style.display = 'none';
             });
 
             group.addEventListener('click', (e) => {
@@ -774,9 +785,28 @@ async function initMap() {
     }
 }
 
+// ==========================================
+// ЛОГИКА ПОИСКА
+// ==========================================
 function setupSearch() {
     const searchInput = document.getElementById('planet-search');
     const resultsDiv = document.getElementById('search-results');
+    const btnSearchToggle = document.getElementById('btn-search-toggle');
+    const searchWrap = document.getElementById('search-wrap');
+
+    if (btnSearchToggle && searchWrap) {
+        btnSearchToggle.addEventListener('click', () => {
+            searchWrap.classList.toggle('active');
+            btnSearchToggle.classList.toggle('active');
+            
+            if (searchWrap.classList.contains('active')) {
+                searchInput.focus();
+            } else {
+                searchInput.value = '';
+                resultsDiv.style.display = 'none';
+            }
+        });
+    }
 
     searchInput.addEventListener('input', (e) => {
         const val = e.target.value.toLowerCase();
@@ -794,6 +824,12 @@ function setupSearch() {
                 div.onclick = () => {
                     searchInput.value = '';
                     resultsDiv.style.display = 'none';
+                    
+                    if (searchWrap && searchWrap.classList.contains('active')) {
+                        searchWrap.classList.remove('active');
+                        if (btnSearchToggle) btnSearchToggle.classList.remove('active');
+                    }
+
                     const absX = (match.x / 100) * MAP_SIZE;
                     const absY = (match.y / 100) * MAP_SIZE;
                     flyTo(absX, absY, 3);
