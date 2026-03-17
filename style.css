@@ -181,7 +181,28 @@ svg { width: 100%; height: 100%; display: block; }
 @keyframes routeFlow { from { stroke-dashoffset: 12; } to { stroke-dashoffset: 0; } }
 @keyframes spinRing { to { transform: rotate(360deg); } }
 
-.search-box { position: relative; width: 175px; }
+/* Поиск */
+.search-box { position: relative; width: 175px; display: flex; align-items: center; }
+#btn-search-toggle {
+    display: none; /* Скрыто на ПК */
+    background: var(--hud-secondary);
+    border: 1px solid var(--hud-cyan);
+    color: var(--hud-cyan);
+    font-size: 16px;
+    width: 40px;
+    height: 40px;
+    cursor: pointer;
+    transition: 0.2s;
+    border-radius: 4px;
+}
+#btn-search-toggle:hover, #btn-search-toggle.active {
+    background: var(--hud-cyan); color: var(--hud-bg);
+}
+
+#search-wrap {
+    display: block;
+    width: 100%;
+}
 input {
     width: 100%; background: var(--hud-secondary); border: 1px solid var(--hud-cyan);
     color: var(--hud-cyan); padding: 8px; font-family: inherit;
@@ -238,116 +259,90 @@ input {
     pointer-events: none; display: none; z-index: 150;
 }
 
-/* --- ИСПРАВЛЕННАЯ АНИМАЦИЯ ОСОБЫХ ОБЪЕКТОВ --- */
-@keyframes pulseWave {
-    0% { transform: scale(1); opacity: 1; stroke-width: 1.5; }
-    100% { transform: scale(3.2); opacity: 0; stroke-width: 0; }
-}
-
-.object-pulse {
-    fill: none;
-    transform-origin: center;
-    transform-box: fill-box;
-    animation: pulseWave 3s ease-out infinite;
-    pointer-events: none;
-}
-
-.map-object-icon {
-    transition: transform 0.1s;
-    transform-origin: center;
-    transform-box: fill-box; /* Жестко фиксируем центр трансформации для SVG */
-    pointer-events: none; /* События мыши будет ловить отдельный невидимый круг */
-}
-
-.map-object-group {
-    cursor: pointer;
-}
-
-.map-object-group:hover .map-object-icon {
-    transform: scale(1.3);
-}
 
 /* ==========================================
-   ГЛОБАЛЬНЫЕ ПРАВИЛА ДЛЯ МОБИЛЬНЫХ
-   ========================================== */
-body, html {
-    overflow: hidden; /* Запрещаем скролл самой веб-страницы */
-    touch-action: none; /* Запрещаем системные жесты браузера, вроде обновления свайпом вниз */
-}
-
-/* ==========================================
-   АДАПТАЦИЯ ИНТЕРФЕЙСА (MEDIA QUERIES)
+   АДАПТАЦИЯ ИНТЕРФЕЙСА ДЛЯ МОБИЛЬНЫХ
    ========================================== */
 @media (max-width: 768px) {
-    /* Поиск: на всю ширину экрана вверху */
-    #search-container {
-        top: 10px;
-        left: 10px;
-        right: 10px;
-        width: auto;
-    }
-    
-    #planet-search {
-        width: 100%;
-        box-sizing: border-box;
-        font-size: 16px; 
+    /* 1. Скрываем панель с органами управления и счётчиком масштаба */
+    .hud-panel.bottom-right {
+        display: none !important;
     }
 
-    /* Тултип: фиксируем внизу по центру */
-    #tooltip {
-        position: fixed !important; 
+    /* 3. Перемещаем панель поиска со слоями в левый нижний угол */
+    .hud-panel.top-right {
         top: auto !important;
         bottom: 20px !important;
+        left: 20px !important;
+        right: auto !important;
+        background: transparent !important;
+        border: none !important;
+        padding: 0 !important;
+        flex-direction: row !important; /* Слои и кнопка поиска рядом */
+        z-index: 1000;
+    }
+
+    /* 2. Поиск становится кнопкой */
+    #btn-search-toggle {
+        display: block !important;
+    }
+
+    /* Скрываем само поле ввода по умолчанию, показываем только при нажатии на кнопку */
+    #search-wrap {
+        display: none;
+        position: absolute;
+        bottom: 50px; /* Поднимаем над кнопками */
+        left: 0;
+        width: calc(100vw - 40px);
+        max-width: 300px;
+        background: var(--hud-bg);
+        border: 1px solid var(--hud-cyan);
+        border-radius: 4px;
+        padding: 10px;
+        box-sizing: border-box;
+    }
+
+    #search-wrap.active {
+        display: block;
+    }
+    
+    .layer-controls {
+        gap: 10px;
+        background: transparent;
+        border: none;
+        padding: 0;
+    }
+    
+    .layer-btn {
+        width: 40px;
+        height: 40px;
+        border-radius: 4px;
+        background: var(--hud-secondary);
+        border: 1px solid var(--hud-cyan);
+    }
+    
+    /* Исправление наложения панелей на мобильных */
+    #route-panel {
+        bottom: 80px; 
+    }
+    #btn-toggle-route {
+        bottom: 80px;
+    }
+    
+    .hud-panel.top-left.legend {
+        width: calc(100vw - 40px);
+        max-width: 300px;
+    }
+    
+    /* Тултип не должен улетать за пределы экрана */
+    #tooltip {
+        position: fixed !important;
+        bottom: 20px !important;
+        top: auto !important;
         left: 50% !important;
         transform: translateX(-50%);
         width: calc(100vw - 40px);
         max-width: 350px;
-        max-height: 35vh;
-        overflow-y: auto; 
-        box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.5);
-    }
-
-    /* Плавающие панели: делаем компактнее */
-    #route-panel, #legend-panel {
-        width: calc(100vw - 20px);
-        max-width: none;
-        max-height: 40vh; 
-        overflow-y: auto;
-        left: 10px;
-        right: 10px;
-    }
-
-    /* Панель маршрута прижимаем вниз, чтобы было удобнее тянуться пальцем */
-    #route-panel {
-        top: auto;
-        bottom: 70px; 
-    }
-
-    /* Кнопки слоев: группируем компактно снизу слева */
-    .layer-controls {
-        top: auto;
-        bottom: 20px;
-        left: 10px;
-        display: flex;
-        gap: 5px;
-    }
-
-    .layer-btn {
-        width: 40px;
-        height: 40px;
-        padding: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    /* Кнопки зума скрываем (работает щипок) */
-    .zoom-controls {
-        display: none; 
-    }
-
-    /* Блок с координатами скрываем (на мобильных палец его всё равно закрывает) */
-    #hover-coords {
-        display: none !important;
+        z-index: 200;
     }
 }
