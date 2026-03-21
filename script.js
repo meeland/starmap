@@ -246,7 +246,7 @@ function flyTo(x, y, targetScale = 2) {
 }
 
 // ==========================================
-// ОБРАБОТЧИКИ СОБЫТИЙ МЫШИ
+// ОБРАБОТЧИКИ СОБЫТИЙ МЫШИ И ТАЧА
 // ==========================================
 svg.addEventListener('mousedown', (e) => {
     if (e.button !== 0) return; 
@@ -290,9 +290,6 @@ if(document.getElementById('btn-reset')) {
     document.getElementById('btn-reset').onclick = () => flyTo(MAP_SIZE/2, MAP_SIZE/2, 0.5);
 }
 
-// ==========================================
-// ПОДДЕРЖКА МОБИЛЬНЫХ УСТРОЙСТВ (TOUCH EVENTS)
-// ==========================================
 let initialPinchDistance = null;
 let initialScale = 1;
 
@@ -643,9 +640,6 @@ async function initMap() {
             planetsLayer.appendChild(group);
         });
 
-        // ==========================================
-        // ЛОГИКА ОСОБЫХ ОБЪЕКТОВ
-        // ==========================================
         objectsData.forEach(obj => {
             if (!obj.id) return;
             const absX = (obj.x / 100) * MAP_SIZE;
