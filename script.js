@@ -774,6 +774,18 @@ async function initMap() {
         svg.addEventListener('click', () => tooltip.style.display = 'none');
         setupSearch();
 
+        // ИСПРАВЛЕНИЕ 1: Автоматически сворачиваем легенду при загрузке на мобильных экранах
+        if (window.innerWidth <= 768) {
+            const legendPanel = document.getElementById('legend-panel');
+            const legendContent = document.getElementById('faction-legend');
+            const legendArrow = document.getElementById('legend-arrow');
+            if (legendPanel && legendContent && legendArrow) {
+                legendPanel.classList.add('collapsed');
+                legendContent.style.display = 'none';
+                legendArrow.textContent = '▶';
+            }
+        }
+
     } catch (error) {
         console.error("Ошибка при загрузке данных:", error);
     }
