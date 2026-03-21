@@ -292,6 +292,13 @@ input {
    АДАПТАЦИЯ ИНТЕРФЕЙСА ДЛЯ МОБИЛЬНЫХ
    ========================================== */
 @media (max-width: 768px) {
+    /* 1. УБИРАЕМ ЛАГИ: Отключаем все тяжелые SVG-анимации */
+    .route-line,
+    .route-ring,
+    .object-pulse {
+        animation: none !important;
+    }
+
     /* Скрываем панель с органами управления и счётчиком масштаба */
     .zoom-panel {
         display: none !important;
