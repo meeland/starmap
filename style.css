@@ -292,7 +292,7 @@ input {
    АДАПТАЦИЯ ИНТЕРФЕЙСА ДЛЯ МОБИЛЬНЫХ
    ========================================== */
 @media (max-width: 768px) {
-    /* 1. УБИРАЕМ ЛАГИ: Отключаем все тяжелые SVG-анимации */
+    /* Отключаем все тяжелые SVG-анимации */
     .route-line,
     .route-ring,
     .object-pulse {
@@ -304,17 +304,33 @@ input {
         display: none !important;
     }
 
-    /* Перемещаем панель поиска со слоями в левый нижний угол */
+    /* ИСПРАВЛЕНИЕ: Выравниваем отступы между всеми тремя кнопками (Слои + Поиск) */
     .search-layers-panel {
         top: auto !important;
         bottom: 20px !important;
-        left: 20px !important;
+        left: 10px !important; 
         right: auto !important;
         background: transparent !important;
         border: none !important;
         padding: 0 !important;
         flex-direction: row !important; 
+        gap: 10px !important; /* Единый отступ между группами кнопок */
         z-index: 1000;
+    }
+
+    .layer-controls {
+        gap: 10px !important; /* Единый отступ внутри слоя кнопок */
+        background: transparent;
+        border: none;
+        padding: 0;
+    }
+
+    .layer-btn, #btn-search-toggle {
+        width: 40px;
+        height: 40px;
+        border-radius: 4px;
+        background: var(--hud-secondary);
+        border: 1px solid var(--hud-cyan);
     }
 
     /* Поиск становится кнопкой */
@@ -322,50 +338,46 @@ input {
         display: block !important;
     }
 
-    /* Скрываем само поле ввода по умолчанию, показываем только при нажатии */
+    /* ИСПРАВЛЕНИЕ: Окно поиска выравниваем строго по левому краю (fixed) */
     #search-wrap {
         display: none;
-        position: absolute;
-        bottom: 50px; 
-        left: 0;
-        width: calc(100vw - 40px);
-        max-width: 300px;
+        position: fixed !important; /* Fixed привязывает окно к краям экрана, а не к кнопке */
+        bottom: 70px !important; 
+        left: 10px !important;
+        width: calc(100vw - 20px) !important;
+        max-width: 300px !important;
         background: var(--hud-bg);
         border: 1px solid var(--hud-cyan);
         border-radius: 4px;
         padding: 10px;
         box-sizing: border-box;
+        z-index: 1000;
     }
 
     #search-wrap.active {
-        display: block;
+        display: block !important;
     }
     
-    .layer-controls {
-        gap: 10px;
-        background: transparent;
-        border: none;
-        padding: 0;
-    }
-    
-    .layer-btn {
-        width: 40px;
-        height: 40px;
-        border-radius: 4px;
-        background: var(--hud-secondary);
-        border: 1px solid var(--hud-cyan);
-    }
-    
-    /* Исправление наложения панелей на мобильных */
-    #route-panel {
-        bottom: 80px; 
-    }
+    /* ИСПРАВЛЕНИЕ: Перемещаем кнопку маршрута в правый нижний угол */
     #btn-toggle-route {
-        bottom: 80px;
+        bottom: 20px !important;
+        right: 10px !important;
+        left: auto !important;
+        width: auto !important;
+        padding: 10px !important;
+        z-index: 1000;
+    }
+
+    #route-panel {
+        bottom: 70px !important;
+        right: 10px !important;
+        left: auto !important;
+        width: calc(100vw - 20px) !important;
+        max-width: 300px !important;
     }
     
     .hud-panel.top-left.legend {
-        width: calc(100vw - 40px);
+        width: calc(100vw - 20px);
         max-width: 300px;
     }
     
@@ -376,7 +388,7 @@ input {
         top: auto !important;
         left: 50% !important;
         transform: translateX(-50%);
-        width: calc(100vw - 40px);
+        width: calc(100vw - 20px);
         max-width: 350px;
         z-index: 200;
     }
