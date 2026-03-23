@@ -299,12 +299,18 @@ input {
         animation: none !important;
     }
 
+    /* Полностью скрываем статичные кольца на мобильных, чтобы не засоряли интерфейс */
+    .object-pulse,
+    .hover-ring {
+        display: none !important;
+    }
+
     /* Скрываем панель с органами управления и счётчиком масштаба */
     .zoom-panel {
         display: none !important;
     }
 
-    /* ИСПРАВЛЕНИЕ: Выравниваем отступы между всеми тремя кнопками (Слои + Поиск) */
+    /* Выравниваем отступы между всеми тремя кнопками (Слои + Поиск) */
     .search-layers-panel {
         top: auto !important;
         bottom: 20px !important;
@@ -314,12 +320,12 @@ input {
         border: none !important;
         padding: 0 !important;
         flex-direction: row !important; 
-        gap: 10px !important; /* Единый отступ между группами кнопок */
+        gap: 10px !important; 
         z-index: 1000;
     }
 
     .layer-controls {
-        gap: 10px !important; /* Единый отступ внутри слоя кнопок */
+        gap: 10px !important; 
         background: transparent;
         border: none;
         padding: 0;
@@ -338,10 +344,10 @@ input {
         display: block !important;
     }
 
-    /* ИСПРАВЛЕНИЕ: Окно поиска выравниваем строго по левому краю (fixed) */
+    /* Окно поиска выравниваем строго по левому краю */
     #search-wrap {
         display: none;
-        position: fixed !important; /* Fixed привязывает окно к краям экрана, а не к кнопке */
+        position: fixed !important; 
         bottom: 70px !important; 
         left: 10px !important;
         width: calc(100vw - 20px) !important;
@@ -357,8 +363,17 @@ input {
     #search-wrap.active {
         display: block !important;
     }
+
+    /* Выпадение поиска вверх */
+    #search-results {
+        top: auto !important;
+        bottom: 100% !important; /* Прижимает блок к верхней границе инпута */
+        border-top: 1px solid var(--hud-cyan) !important;
+        border-bottom: none !important;
+        margin-bottom: 5px; /* Небольшой отступ от инпута */
+    }
     
-    /* ИСПРАВЛЕНИЕ: Перемещаем кнопку маршрута в правый нижний угол */
+    /* Перемещаем кнопку маршрута в правый нижний угол */
     #btn-toggle-route {
         bottom: 20px !important;
         right: 10px !important;
@@ -381,10 +396,10 @@ input {
         max-width: 300px;
     }
     
-    /* Тултип по центру внизу */
+    /* Тултип по центру внизу с одинаковым отступом (70px) */
     #tooltip {
         position: fixed !important;
-        bottom: 20px !important;
+        bottom: 70px !important; /* Уравнено с маршрутизатором и окном поиска */
         top: auto !important;
         left: 50% !important;
         transform: translateX(-50%);
