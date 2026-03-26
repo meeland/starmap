@@ -4,6 +4,19 @@ const OBJECTS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTVPQVM
 
 const MAP_SIZE = 4000;
 
+// Цвета для слоя Регионов
+const regionColors = {
+    "1": "#b45211", // Глубокое ядро
+    "2": "#bc8c0b", // Центральные миры
+    "3": "#abb914", // Колонии
+    "4": "#14b98c", // Внутреннее кольцо
+    "5": "#148cb9", // Среднее кольцо
+    "6": "#4d2f8a", // Регион Экспансии
+    "7": "#BED378", // Пространство хаттов
+    "8": "#853c3c", // Внешнее Кольцо
+    "9": "#114c59"  // Дикое пространство
+};
+
 const svg = document.getElementById('starmap');
 const mapContainer = document.getElementById('map-container');
 const mapGroup = document.getElementById('map-group');
@@ -11,6 +24,7 @@ const connectionsLayer = document.getElementById('connections-layer');
 const routeVisualLayer = document.getElementById('route-visual-layer');
 const planetsLayer = document.getElementById('planets-layer');
 const voronoiLayer = document.getElementById('voronoi-layer'); 
+const voronoiRegionLayer = document.getElementById('voronoi-region-layer'); 
 const objectsLayer = document.getElementById('objects-layer');
 
 const tooltip = document.getElementById('tooltip');
@@ -87,22 +101,35 @@ document.getElementById('legend-header').addEventListener('click', () => {
     }
 });
 
+// Логика кнопок переключения слоев (Базовый, Политический, Регионы)
 const btnLayerBare = document.getElementById('btn-layer-bare');
 const btnLayerPol = document.getElementById('btn-layer-pol');
+const btnLayerReg = document.getElementById('btn-layer-reg');
 
-btnLayerBare.onclick = () => {
+function setMapMode(mode) {
     voronoiLayer.style.display = 'none';
-    btnLayerBare.classList.add('active');
-    btnLayerPol.classList.remove('active');
-    mapContainer.classList.remove('political-mode');
-};
-
-btnLayerPol.onclick = () => {
-    voronoiLayer.style.display = 'block';
-    btnLayerPol.classList.add('active');
+    voronoiRegionLayer.style.display = 'none';
     btnLayerBare.classList.remove('active');
-    mapContainer.classList.add('political-mode');
-};
+    btnLayerPol.classList.remove('active');
+    btnLayerReg.classList.remove('active');
+    mapContainer.classList.remove('political-mode', 'region-mode');
+
+    if (mode === 'bare') {
+        btnLayerBare.classList.add('active');
+    } else if (mode === 'pol') {
+        voronoiLayer.style.display = 'block';
+        btnLayerPol.classList.add('active');
+        mapContainer.classList.add('political-mode');
+    } else if (mode === 'reg') {
+        voronoiRegionLayer.style.display = 'block';
+        btnLayerReg.classList.add('active');
+        mapContainer.classList.add('region-mode');
+    }
+}
+
+btnLayerBare.onclick = () => setMapMode('bare');
+btnLayerPol.onclick = () => setMapMode('pol');
+btnLayerReg.onclick = () => setMapMode('reg');
 
 document.getElementById('btn-toggle-route').onclick = (e) => {
     isRoutingMode = !isRoutingMode;
@@ -435,6 +462,7 @@ async function initMap() {
             const factionInfo = factionsData[planet.faction];
             const isNeutral = (planet.faction === "Нейтральные Системы");
 
+            // 1. Политический слой
             const clip = document.createElementNS('http://www.w3.org/2000/svg', 'clipPath');
             clip.setAttribute('id', `clip-cell-${i}`);
             const clipPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
@@ -454,6 +482,25 @@ async function initMap() {
                 bg.style.strokeWidth = "1px"; 
             }
             voronoiLayer.appendChild(bg);
+
+            // 2. Слой Регионов
+            const regionCode = String(planet.region || "0").trim();
+            const rColor = regionColors[regionCode];
+            
+            const rBg = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            rBg.setAttribute('d', pathData);
+            rBg.setAttribute('class', 'voronoi-region-bg');
+            
+            if (!rColor || regionCode === "0") {
+                rBg.style.fill = "transparent";
+                rBg.style.stroke = "none";
+            } else {
+                rBg.style.fill = rColor;
+                rBg.style.stroke = rColor;
+                rBg.style.strokeWidth = "2.5px"; 
+                rBg.setAttribute('stroke-linejoin', 'round');
+            }
+            voronoiRegionLayer.appendChild(rBg);
 
             let borderPath = "";
             let innerPath = ""; 
@@ -591,6 +638,12 @@ async function initMap() {
             text.setAttribute('text-anchor', 'middle');
             text.setAttribute('class', 'planet-label');
             text.style.setProperty('--faction-color', color);
+            
+            // Цвет текста для региона
+            const rCode = String(planet.region || "0").trim();
+            const rColorText = regionColors[rCode] || "#cccccc"; 
+            text.style.setProperty('--region-color', rColorText);
+            
             group.appendChild(text);
 
             circle.addEventListener('mouseover', (e) => {
@@ -731,6 +784,7 @@ async function initMap() {
             text.setAttribute('class', 'planet-label');
             text.style.fill = color; 
             text.style.setProperty('--faction-color', color); 
+            text.style.setProperty('--region-color', color); 
             group.appendChild(text);
 
             group.addEventListener('mouseover', (e) => {
@@ -774,7 +828,6 @@ async function initMap() {
         svg.addEventListener('click', () => tooltip.style.display = 'none');
         setupSearch();
 
-        // ИСПРАВЛЕНИЕ 1: Автоматически сворачиваем легенду при загрузке на мобильных экранах
         if (window.innerWidth <= 768) {
             const legendPanel = document.getElementById('legend-panel');
             const legendContent = document.getElementById('faction-legend');
