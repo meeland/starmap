@@ -38,6 +38,7 @@ svg { width: 100%; height: 100%; display: block; }
     pointer-events: none; 
     stroke-linecap: square; 
 }
+.voronoi-region-bg { pointer-events: none; }
 
 .planet-label {
     font-size: 3.5px; 
@@ -58,6 +59,10 @@ svg { width: 100%; height: 100%; display: block; }
 
 .political-mode .planet-label {
     fill: var(--faction-color) !important;
+}
+
+.region-mode .planet-label {
+    fill: var(--region-color) !important;
 }
 
 .hover-ring { pointer-events: none; }
@@ -184,7 +189,7 @@ svg { width: 100%; height: 100%; display: block; }
 /* Поиск */
 .search-box { position: relative; width: 175px; display: flex; align-items: center; }
 #btn-search-toggle {
-    display: none; /* Скрыто на ПК */
+    display: none; 
     background: var(--hud-secondary);
     border: 1px solid var(--hud-cyan);
     color: var(--hud-cyan);
@@ -299,7 +304,7 @@ input {
         animation: none !important;
     }
 
-    /* Полностью скрываем статичные кольца на мобильных, чтобы не засоряли интерфейс */
+    /* Полностью скрываем статичные кольца на мобильных */
     .object-pulse,
     .hover-ring {
         display: none !important;
@@ -310,7 +315,7 @@ input {
         display: none !important;
     }
 
-    /* Выравниваем отступы между всеми тремя кнопками (Слои + Поиск) */
+    /* Перемещаем панель поиска со слоями в левый нижний угол */
     .search-layers-panel {
         top: auto !important;
         bottom: 20px !important;
@@ -367,10 +372,10 @@ input {
     /* Выпадение поиска вверх */
     #search-results {
         top: auto !important;
-        bottom: 100% !important; /* Прижимает блок к верхней границе инпута */
+        bottom: 100% !important; 
         border-top: 1px solid var(--hud-cyan) !important;
         border-bottom: none !important;
-        margin-bottom: 5px; /* Небольшой отступ от инпута */
+        margin-bottom: 5px; 
     }
     
     /* Перемещаем кнопку маршрута в правый нижний угол */
@@ -399,7 +404,7 @@ input {
     /* Тултип по центру внизу с одинаковым отступом (70px) */
     #tooltip {
         position: fixed !important;
-        bottom: 70px !important; /* Уравнено с маршрутизатором и окном поиска */
+        bottom: 70px !important; 
         top: auto !important;
         left: 50% !important;
         transform: translateX(-50%);
