@@ -130,7 +130,7 @@ svg { width: 100%; height: 100%; display: block; }
 .top-left { top: 20px; left: 20px; }
 .top-right { top: 20px; right: 20px; }
 .bottom-left { bottom: 20px; left: 20px; }
-.bottom-right { bottom: 20px; right: 20px; padding: 15px; display: flex; flex-direction: column; align-items: flex-end; width: 172px; box-sizing: border-box; }
+.bottom-right { bottom: 20px; right: 20px; padding: 8px 15px; display: flex; flex-direction: column; align-items: flex-end; width: 172px; box-sizing: border-box; }
 
 .layer-controls {
     display: flex; gap: 5px; background: var(--hud-secondary);
@@ -145,7 +145,7 @@ svg { width: 100%; height: 100%; display: block; }
 .layer-btn:hover, .layer-btn.active { background: var(--hud-cyan); color: var(--hud-bg); }
 
 #btn-toggle-route {
-    position: absolute; bottom: 135px; right: 20px; width: 172px; 
+    position: absolute; bottom: 65px; right: 20px; width: 172px; 
     box-sizing: border-box; background: var(--hud-secondary);
     border: 1px solid var(--hud-cyan); color: var(--hud-cyan);
     padding: 10px 15px; cursor: pointer; font-family: inherit;
@@ -155,7 +155,7 @@ svg { width: 100%; height: 100%; display: block; }
 #btn-toggle-route:hover, #btn-toggle-route.active { background: var(--hud-cyan); color: var(--hud-bg); }
 
 #route-panel {
-    position: absolute; bottom: 180px; right: 20px; background: var(--hud-bg);
+    position: absolute; bottom: 110px; right: 20px; background: var(--hud-bg);
     border: 1px solid var(--hud-cyan); border-radius: 4px; width: 172px; z-index: 101;
     pointer-events: none; transform: scaleY(0); transform-origin: bottom right; 
     opacity: 0; transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.3s ease;
@@ -222,7 +222,7 @@ input {
 .search-item { padding: 8px; cursor: pointer; font-size: 12px; }
 .search-item:hover { background: var(--hud-secondary); }
 
-.telemetry { font-size: 14px; letter-spacing: 1px; color: var(--hud-cyan); text-align: right; font-weight: bold; margin-bottom: 10px; }
+.telemetry { font-size: 14px; letter-spacing: 1px; color: var(--hud-cyan); text-align: right; font-weight: bold; }
 
 #tooltip {
     position: absolute; background: var(--hud-bg);
