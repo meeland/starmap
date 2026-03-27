@@ -101,7 +101,7 @@ document.getElementById('legend-header').addEventListener('click', () => {
     }
 });
 
-// Логика кнопок переключения слоев (Базовый, Политический, Регионы)
+// Логика кнопок переключения слоев
 const btnLayerBare = document.getElementById('btn-layer-bare');
 const btnLayerPol = document.getElementById('btn-layer-pol');
 const btnLayerReg = document.getElementById('btn-layer-reg');
@@ -306,16 +306,6 @@ svg.addEventListener('wheel', (e) => {
     scale = newScale;
     updateTransform();
 }, { passive: false });
-
-if(document.getElementById('btn-zoom-in')) {
-    document.getElementById('btn-zoom-in').onclick = () => flyTo((window.innerWidth/2 - translateX)/scale, (window.innerHeight/2 - translateY)/scale, scale * 1.5);
-}
-if(document.getElementById('btn-zoom-out')) {
-    document.getElementById('btn-zoom-out').onclick = () => flyTo((window.innerWidth/2 - translateX)/scale, (window.innerHeight/2 - translateY)/scale, scale / 1.5);
-}
-if(document.getElementById('btn-reset')) {
-    document.getElementById('btn-reset').onclick = () => flyTo(MAP_SIZE/2, MAP_SIZE/2, 0.5);
-}
 
 let initialPinchDistance = null;
 let initialScale = 1;
