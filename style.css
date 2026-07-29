@@ -170,7 +170,7 @@ svg {
     display: flex;
     align-items: center;
     width: 100%;
-    padding: 6px 10px;
+    padding: 6px 5px;
     margin-bottom: 8px;
     border-radius: 4px;
     font-size: 11px;
@@ -189,7 +189,7 @@ svg {
     border-radius: 3px;
     font-weight: bold;
     font-size: 11px;
-    margin-right: 10px;
+    margin-right: 5px;
     width: 28px;
     text-align: center;
     flex-shrink: 0;
