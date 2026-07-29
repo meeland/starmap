@@ -167,7 +167,7 @@ function createRouteRing(x, y) {
     ringGroup.setAttribute('transform', `translate(${x}, ${y})`);
     
     const ring = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-    ring.setAttribute('r', 8);
+    ring.setAttribute('r', 6);
     ring.setAttribute('cx', 0);
     ring.setAttribute('cy', 0);
     ring.setAttribute('class', 'route-ring');
