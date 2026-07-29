@@ -271,6 +271,7 @@ svg {
 #route:hover,
 #route.active {
     background: var(--accent-blue);
+    border-color: var(--accent-blue);
 }
 
 #route-panel {
