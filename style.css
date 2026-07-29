@@ -492,7 +492,6 @@ input {
     font-size: 11px;
     text-decoration: none;
     font-weight: bold;
-    border-top: 1px solid rgba(12, 133, 226, 0.3);
     transition: 0.2s;
 }
 
