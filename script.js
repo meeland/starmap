@@ -131,7 +131,7 @@ btnLayerBare.onclick = () => setMapMode('bare');
 btnLayerPol.onclick = () => setMapMode('pol');
 btnLayerReg.onclick = () => setMapMode('reg');
 
-document.getElementById('btn-toggle-route').onclick = (e) => {
+document.getElementById('route').onclick = (e) => {
     isRoutingMode = !isRoutingMode;
     
     const panel = document.getElementById('route-panel');
