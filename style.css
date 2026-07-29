@@ -1,7 +1,10 @@
 :root {
     --bg-color: #0d0d0f;
+    --bg-panel: #14141c;
     --border-color: #2a2a3e;
     --text-primary: #d0d8f0;
+    --accent-blue: #4f6aff;
+    --red-main: #b54a4a;
 
     --hud-bg: #1b1926;
     --hud-secondary: #13121a;
@@ -106,7 +109,7 @@ svg {
     top: 20px;
     right: 20px;
     position: absolute;
-    background: var(--bg-color);
+    background: var(--bg-panel);
     border: 1px solid var(--border-color);
     border-radius: 4px;
     pointer-events: auto;
@@ -118,9 +121,6 @@ svg {
 
 .hud-panel {
     position: absolute;
-    background: var(--bg-color);
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
     pointer-events: auto;
 }
 
@@ -130,6 +130,12 @@ svg {
     max-width: 400px;
     padding: 0;
     overflow: hidden;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    position: absolute;
+    pointer-events: auto;
+    top: 20px;
+    left: 20px;
 }
 
 #legend-header {
@@ -142,8 +148,7 @@ svg {
     justify-content: space-between;
     align-items: center;
     letter-spacing: 1px;
-    font-weight: bold;
-    background: var(--bg-color);
+    background: var(--bg-panel);
     border-bottom: 1px solid var(--border-color);
     transition: background 0.2s;
 }
@@ -158,13 +163,14 @@ svg {
 
 #faction-legend {
     padding: 15px;
+    background: var(--bg-panel);
 }
 
 .legend-block {
     display: flex;
     align-items: center;
     width: 100%;
-    padding: 8px 15px;
+    padding: 6px 10px;
     margin-bottom: 8px;
     border-radius: 4px;
     font-size: 11px;
@@ -204,23 +210,26 @@ svg {
     left: 20px;
 }
 
-.bottom-right {
+.scale {
+    position: absolute;
+    pointer-events: auto;
     bottom: 20px;
     right: 20px;
     padding: 8px 15px;
     display: flex;
     flex-direction: column;
-    width: 190px;
+    width: 200px;
     box-sizing: border-box;
+    background-color: var(--bg-panel);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
 }
 
 .layer-controls {
     display: flex;
-    gap: 5px;
-    background: var(--hud-secondary);
+    gap: 1px;
+    background: var(--bg-panel);
     border: 1px solid var(--border-color);
-    padding: 3px;
-    border-radius: 4px;
 }
 
 .layer-btn {
@@ -232,22 +241,21 @@ svg {
     height: 30px;
     cursor: pointer;
     transition: 0.2s;
-    border-radius: 2px;
 }
 
 .layer-btn:hover,
 .layer-btn.active {
-    background: var(--bg-color);
+    background: var(--accent-blue);
     color: var(--text-primary);
 }
 
-#btn-toggle-route {
+#route {
     position: absolute;
     bottom: 65px;
     right: 20px;
-    width: 190px;
+    width: 200px;
     box-sizing: border-box;
-    background: var(--bg-color);
+    background: var(--bg-panel);
     border: 1px solid var(--border-color);
     padding: 10px 15px;
     cursor: pointer;
@@ -260,20 +268,19 @@ svg {
     color: var(--text-primary)
 }
 
-#btn-toggle-route:hover,
-#btn-toggle-route.active {
-    background: var(--border-color);
-    color: var(--hud-bg);
+#route:hover,
+#route.active {
+    background: var(--accent-blue);
 }
 
 #route-panel {
     position: absolute;
-    bottom: 110px;
+    bottom: 115px;
     right: 20px;
-    background: var(--hud-bg);
+    background: var(--bg-panel);
     border: 1px solid var(--border-color);
     border-radius: 4px;
-    width: 190px;
+    width: 200px;
     z-index: 101;
     pointer-events: none;
     transform: scaleY(0);
@@ -290,7 +297,7 @@ svg {
 }
 
 .route-panel-content {
-    padding: 15px;
+    padding: 10px;
 }
 
 .route-header {
@@ -303,34 +310,29 @@ svg {
 }
 
 .route-stat {
-    font-size: 11px;
-    margin-bottom: 6px;
-    color: #ccc;
+    font-size: 12px;
+    margin-bottom: 5px;
 }
 
 .route-stat span {
-    color: #fff;
     float: right;
     font-weight: bold;
 }
 
 #btn-reset-route {
     width: 100%;
-    margin-top: 10px;
-    background: var(--hud-secondary);
-    border: 1px solid #ff4444;
-    color: #ff4444;
-    padding: 6px;
+    margin-top: 5px;
+    background: var(--bg-color);
+    border: 1px solid var(--red-main);
+    color: var(--red-main);
+    padding: 5px;
     cursor: pointer;
-    font-family: inherit;
     border-radius: 4px;
-    transition: 0.2s;
-    font-weight: bold;
 }
 
 #btn-reset-route:hover {
-    background: #ff4444;
-    color: #fff;
+    background: var(--red-main);
+    color: var(--text-primary);
 }
 
 .route-line {
@@ -643,7 +645,7 @@ input {
     }
 
     /* Перемещаем кнопку маршрута в правый нижний угол */
-    #btn-toggle-route {
+    #route {
         bottom: 20px !important;
         right: 10px !important;
         left: auto !important;
