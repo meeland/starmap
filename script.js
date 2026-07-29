@@ -617,7 +617,7 @@ async function initMap() {
             textBg.setAttribute('y', absY + 3.5);
             textBg.setAttribute('width', rectWidth);
             textBg.setAttribute('height', rectHeight);
-            textBg.setAttribute('rx', 1.5);
+            textBg.setAttribute('rx', 0.75);
             textBg.setAttribute('class', 'planet-label-bg');
             group.appendChild(textBg);
 
