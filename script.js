@@ -86,7 +86,7 @@ function buildLegend() {
 }
 
 document.getElementById('legend-header').addEventListener('click', () => {
-    const panel = document.getElementById('legend-panel');
+    const panel = document.getElementById('legend');
     const content = document.getElementById('faction-legend');
     const arrow = document.getElementById('legend-arrow');
     
@@ -97,7 +97,7 @@ document.getElementById('legend-header').addEventListener('click', () => {
         arrow.textContent = '▶';
     } else {
         content.style.display = 'block';
-        arrow.textContent = '▼';
+        arrow.textContent = '⯆';
     }
 });
 
@@ -819,7 +819,7 @@ async function initMap() {
         setupSearch();
 
         if (window.innerWidth <= 768) {
-            const legendPanel = document.getElementById('legend-panel');
+            const legendPanel = document.getElementById('legend');
             const legendContent = document.getElementById('faction-legend');
             const legendArrow = document.getElementById('legend-arrow');
             if (legendPanel && legendContent && legendArrow) {
