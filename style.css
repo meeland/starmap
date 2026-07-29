@@ -575,99 +575,175 @@ input {
         display: none !important;
     }
 
-    /* Скрываем панель с органами управления и счётчиком масштаба */
-    .zoom-panel {
+    /* Скрываем блок масштаба */
+    .scale {
         display: none !important;
     }
 
-    /* Перемещаем панель поиска со слоями в левый нижний угол */
-    .search-layers-panel {
-        top: auto !important;
-        bottom: 20px !important;
-        left: 10px !important;
-        right: auto !important;
-        background: transparent !important;
-        border: none !important;
-        padding: 0 !important;
-        flex-direction: row !important;
-        gap: 10px !important;
+    /* ---- ЛЕГЕНДА сверху на всю ширину ---- */
+    .legend {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        min-width: unset !important;
+        max-width: 100% !important;
+        border-radius: 0 !important;
+        border-left: none !important;
+        border-right: none !important;
+        border-top: none !important;
         z-index: 1000;
+        background: var(--bg-panel);
+        box-sizing: border-box;
+    }
+
+    .legend.collapsed #legend-header {
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    #legend-header {
+        padding: 12px 16px;
+        font-size: 13px;
+    }
+
+    #faction-legend {
+        padding: 12px 16px;
+        max-height: 40vh;
+        overflow-y: auto;
+    }
+
+    /* ---- ФУТЕР: поиск + смена режимов, на всю ширину ---- */
+    .search-layer {
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        top: auto !important;
+        width: 100% !important;
+        border-radius: 0 !important;
+        border-left: none !important;
+        border-right: none !important;
+        border-bottom: none !important;
+        background: var(--bg-panel);
+        padding: 8px 12px !important;
+        gap: 8px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        box-sizing: border-box;
+        z-index: 1000;
+        flex-wrap: nowrap;
+        border-top: 1px solid var(--border-color);
     }
 
     .layer-controls {
-        gap: 10px !important;
+        display: flex;
+        gap: 4px !important;
         background: transparent;
         border: none;
         padding: 0;
+        flex-shrink: 0;
     }
 
-    .layer-btn,
-    #btn-search-toggle {
-        width: 40px;
-        height: 40px;
-        border-radius: 4px;
+    .layer-btn {
+        width: 36px !important;
+        height: 36px !important;
+        font-size: 14px !important;
         background: var(--hud-secondary);
         border: 1px solid var(--border-color);
+        border-radius: 4px;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
-    /* Поиск становится кнопкой */
+    /* Поиск: кнопка и выпадающее поле */
+    .search-box {
+        width: auto !important;
+        flex-shrink: 1;
+        flex-grow: 1;
+        display: flex;
+        justify-content: flex-end;
+        gap: 6px;
+    }
+
     #btn-search-toggle {
-        display: block !important;
+        display: flex !important;
+        width: 36px !important;
+        height: 36px !important;
+        font-size: 16px !important;
+        background: var(--hud-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
     }
 
-    /* Окно поиска выравниваем строго по левому краю */
     #search-wrap {
         display: none;
         position: fixed !important;
-        bottom: 70px !important;
-        left: 10px !important;
-        width: calc(100vw - 20px) !important;
-        max-width: 300px !important;
+        bottom: 56px !important;
+        left: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
         background: var(--hud-bg);
         border: 1px solid var(--border-color);
-        border-radius: 4px;
-        padding: 10px;
+        border-radius: 0 !important;
+        padding: 10px 12px;
         box-sizing: border-box;
-        z-index: 1000;
+        z-index: 1001;
+        border-bottom: none;
     }
 
     #search-wrap.active {
         display: block !important;
     }
 
-    /* Выпадение поиска вверх */
-    #search-results {
-        top: auto !important;
-        bottom: 100% !important;
-        border-top: 1px solid var(--border-color) !important;
-        border-bottom: none !important;
-        margin-bottom: 5px;
+    #search-wrap input {
+        width: 100%;
+        border-radius: 4px;
     }
 
-    /* Перемещаем кнопку маршрута в правый нижний угол */
+    #search-results {
+        position: static !important;
+        border-top: 1px solid var(--border-color) !important;
+        border-bottom: none !important;
+        margin-top: 6px;
+        max-height: 30vh;
+    }
+
+    /* ---- Кнопка маршрута: над футером, справа ---- */
     #route {
-        bottom: 20px !important;
-        right: 10px !important;
+        position: fixed !important;
+        bottom: 64px !important;
+        right: 12px !important;
         left: auto !important;
-        width: 172px !important;
-        padding: 10px !important;
-        z-index: 1000;
+        width: auto !important;
+        padding: 6px 14px !important;
+        font-size: 12px !important;
+        background: var(--bg-panel);
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+        z-index: 999;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.6);
+        white-space: nowrap;
     }
 
     #route-panel {
-        bottom: 70px !important;
-        right: 10px !important;
+        position: fixed !important;
+        bottom: 106px !important;
+        right: 12px !important;
         left: auto !important;
-        width: 172px !important;
-        max-width: none !important;
+        width: 200px !important;
+        max-width: calc(100vw - 24px) !important;
+        z-index: 998;
+        transform-origin: bottom right;
+        border-radius: 4px;
     }
 
-    .hud-panel.top-left.legend {
-        width: calc(100vw - 20px);
-        max-width: 300px;
-    }
-
-    /* Тултип по центру внизу с одинаковым отступом (70px) */
+    /* ---- Тултип по центру внизу с отступом от футера ---- */
     #tooltip {
         position: fixed !important;
         bottom: 70px !important;
@@ -677,5 +753,16 @@ input {
         width: calc(100vw - 20px);
         max-width: 350px;
         z-index: 200;
+        border-radius: 6px;
+    }
+
+    /* ---- Убираем лишние отступы у UI-слоя ---- */
+    #ui-layer {
+        pointer-events: none;
+    }
+
+    /* ---- Координаты скрываем на мобильных ---- */
+    #hover-coords {
+        display: none !important;
     }
 }
