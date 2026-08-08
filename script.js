@@ -640,8 +640,6 @@ async function initMap() {
                 hoverRing.style.display = 'block';
                 if(hoverCoords) {
                     hoverCoords.textContent = `X: ${planet.x} | Y: ${planet.y}`;
-                    hoverCoords.style.left = `${e.pageX + 15}px`;
-                    hoverCoords.style.top = `${e.pageY - 15}px`;
                     hoverCoords.style.display = 'block';
                 }
             });
@@ -672,8 +670,6 @@ async function initMap() {
                         ttWiki.classList.add('disabled');
                     }
 
-                    tooltip.style.left = `${e.pageX + 15}px`;
-                    tooltip.style.top = `${e.pageY + 15}px`;
                     tooltip.style.display = 'block';
 
                     flyTo(absX, absY, scale);
@@ -780,8 +776,6 @@ async function initMap() {
             group.addEventListener('mouseover', (e) => {
                 if(hoverCoords) {
                     hoverCoords.textContent = `X: ${obj.x} | Y: ${obj.y}`;
-                    hoverCoords.style.left = `${e.pageX + 15}px`;
-                    hoverCoords.style.top = `${e.pageY - 15}px`;
                     hoverCoords.style.display = 'block';
                 }
             });
@@ -804,8 +798,6 @@ async function initMap() {
                     tooltip.style.borderColor = color; 
                     ttWiki.style.display = 'none'; 
 
-                    tooltip.style.left = `${e.pageX + 15}px`;
-                    tooltip.style.top = `${e.pageY + 15}px`;
                     tooltip.style.display = 'block';
 
                     flyTo(absX, absY, scale);
