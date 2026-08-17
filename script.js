@@ -42,14 +42,13 @@ let isDragging = false;
 let startX, startY;
 
 let planetsList = [];
-const planetMap = {};
+let planetMap = {};
 let globalConnections = []; 
 
 let isRoutingMode = false;
 let routeNodes = [];
 let routeVisualElements = []; 
 let d0 = 0, dColor = 0, dOff = 0;
-let activeFlyToId = null; // Устранение бага с конфликтом анимаций flyTo
 
 function buildLegend() {
     const legendContainer = document.getElementById('faction-legend');
@@ -60,11 +59,10 @@ function buildLegend() {
         factionCounts[p.faction] = (factionCounts[p.faction] || 0) + 1;
     });
 
-    const fragment = document.createDocumentFragment();
-
     Object.values(factionsData).forEach(faction => {
         const block = document.createElement('div');
         block.className = 'legend-block';
+        
         block.style.backgroundColor = faction.secondaryColor;
         block.style.color = faction.mainColor;
         block.style.borderColor = faction.mainColor;
@@ -82,10 +80,9 @@ function buildLegend() {
         
         block.appendChild(countBadge);
         block.appendChild(nameSpan);
-        fragment.appendChild(block);
+        
+        legendContainer.appendChild(block);
     });
-
-    legendContainer.appendChild(fragment);
 }
 
 document.getElementById('legend-header').addEventListener('click', () => {
@@ -104,6 +101,7 @@ document.getElementById('legend-header').addEventListener('click', () => {
     }
 });
 
+// Логика кнопок переключения слоев
 const btnLayerBare = document.getElementById('btn-layer-bare');
 const btnLayerPol = document.getElementById('btn-layer-pol');
 const btnLayerReg = document.getElementById('btn-layer-reg');
@@ -135,6 +133,7 @@ btnLayerReg.onclick = () => setMapMode('reg');
 
 document.getElementById('route').onclick = (e) => {
     isRoutingMode = !isRoutingMode;
+    
     const panel = document.getElementById('route-panel');
     if (isRoutingMode) {
         panel.classList.add('open');
@@ -168,11 +167,12 @@ function createRouteRing(x, y) {
     ringGroup.setAttribute('transform', `translate(${x}, ${y})`);
     
     const ring = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-    ring.setAttribute('r', '6');
-    ring.setAttribute('cx', '0');
-    ring.setAttribute('cy', '0');
+    ring.setAttribute('r', 6);
+    ring.setAttribute('cx', 0);
+    ring.setAttribute('cy', 0);
     ring.setAttribute('class', 'route-ring');
     ring.setAttribute('stroke-width', '1');
+    
     ring.setAttribute('stroke-dasharray', '5.854 2'); 
     ring.setAttribute('stroke-dashoffset', '6.854'); 
     
@@ -208,7 +208,7 @@ function handleRouteClick(targetNode) {
         const dist = Math.sqrt(Math.pow(absX2 - absX1, 2) + Math.pow(absY2 - absY1, 2));
 
         if (conn) {
-            const type = conn.type || Object.values(conn)[2] || '0';
+            const type = Object.values(conn)[2] || '0';
             if (type === '0') d0 += dist;
             else if (['V','G','Y','R','B'].includes(type)) dColor += dist;
         } else {
@@ -233,7 +233,7 @@ function handleRouteClick(targetNode) {
 
 function updateTransform() {
     mapGroup.setAttribute('transform', `translate(${translateX}, ${translateY}) scale(${scale})`);
-    if (zoomLevelText) zoomLevelText.textContent = scale.toFixed(2);
+    if(zoomLevelText) { zoomLevelText.textContent = scale.toFixed(2); }
     
     if (scale <= 0.90) {
         planetsLayer.classList.add('hide-labels');
@@ -245,11 +245,6 @@ function updateTransform() {
 }
 
 function flyTo(x, y, targetScale = 2) {
-    if (activeFlyToId !== null) {
-        cancelAnimationFrame(activeFlyToId);
-        activeFlyToId = null;
-    }
-
     const rect = svg.getBoundingClientRect();
     const centerX = rect.width / 2;
     const centerY = rect.height / 2;
@@ -272,13 +267,9 @@ function flyTo(x, y, targetScale = 2) {
         
         updateTransform();
 
-        if (progress < 1) {
-            activeFlyToId = requestAnimationFrame(animate);
-        } else {
-            activeFlyToId = null;
-        }
+        if (progress < 1) requestAnimationFrame(animate);
     }
-    activeFlyToId = requestAnimationFrame(animate);
+    requestAnimationFrame(animate);
 }
 
 // ==========================================
@@ -307,7 +298,7 @@ svg.addEventListener('wheel', (e) => {
     const mouseY = e.clientY - rect.top;
 
     const zoomFactor = Math.exp((e.deltaY < 0 ? 1 : -1) * 0.1);
-    const newScale = Math.max(0.1, Math.min(scale * zoomFactor, 8)); 
+    let newScale = Math.max(0.1, Math.min(scale * zoomFactor, 8)); 
     const actualZoomFactor = newScale / scale;
 
     translateX = mouseX - (mouseX - translateX) * actualZoomFactor;
@@ -355,7 +346,7 @@ window.addEventListener('touchmove', (e) => {
         
         const currentDistance = getPinchDistance(e.touches);
         const zoomFactor = currentDistance / initialPinchDistance;
-        const newScale = Math.max(0.1, Math.min(initialScale * zoomFactor, 8));
+        let newScale = Math.max(0.1, Math.min(initialScale * zoomFactor, 8));
 
         const center = getPinchCenter(e.touches);
         const rect = svg.getBoundingClientRect();
@@ -384,6 +375,7 @@ window.addEventListener('touchend', (e) => {
     }
 });
 
+
 // ==========================================
 // ИНИЦИАЛИЗАЦИЯ И РЕНДЕР КАРТЫ
 // ==========================================
@@ -395,17 +387,6 @@ function fetchCSV(url) {
 
 tooltip.addEventListener('click', (e) => e.stopPropagation());
 
-// Оптимизированный помощник для ключей ребер Вороного
-function getEdgeKey(p1, p2) {
-    let pt1, pt2;
-    if (p1[0] < p2[0] - 0.001 || (Math.abs(p1[0] - p2[0]) <= 0.001 && p1[1] < p2[1])) {
-        pt1 = p1; pt2 = p2;
-    } else {
-        pt1 = p2; pt2 = p1;
-    }
-    return `${pt1[0].toFixed(2)},${pt1[1].toFixed(2)}-${pt2[0].toFixed(2)},${pt2[1].toFixed(2)}`;
-}
-
 async function initMap() {
     try {
         const [planetsData, connectionsData, objectsData] = await Promise.all([
@@ -415,13 +396,17 @@ async function initMap() {
         ]);
         
         planetsList = planetsData.filter(p => p.id).map(p => {
-            const factionName = p.faction ? p.faction.trim() : "";
-            p.faction = (!factionName || !factionsData[factionName]) ? "Нейтральные Системы" : factionName;
+            let factionName = p.faction ? p.faction.trim() : "";
+            if (!factionName || !factionsData[factionName]) {
+                p.faction = "Нейтральные Системы";
+            } else {
+                p.faction = factionName;
+            }
             return p;
         });
 
         globalConnections = connectionsData.filter(c => c.from && c.to);
-        planetsList.forEach(p => { planetMap[p.id] = p; });
+        planetsList.forEach(p => planetMap[p.id] = p);
 
         buildLegend();
 
@@ -445,15 +430,20 @@ async function initMap() {
             const poly = voronoi.cellPolygon(i);
             if (!poly) return;
             for (let j = 0; j < poly.length - 1; j++) {
-                const key = getEdgeKey(poly[j], poly[j+1]);
+                const p1 = poly[j];
+                const p2 = poly[j+1];
+                let pt1, pt2;
+                if (p1[0] < p2[0] - 0.001 || (Math.abs(p1[0] - p2[0]) <= 0.001 && p1[1] < p2[1])) {
+                    pt1 = p1; pt2 = p2;
+                } else {
+                    pt1 = p2; pt2 = p1;
+                }
+                const key = `${pt1[0].toFixed(2)},${pt1[1].toFixed(2)}-${pt2[0].toFixed(2)},${pt2[1].toFixed(2)}`;
+                
                 if (!edges.has(key)) edges.set(key, []);
-                edges.get(key).push({ cell: i, p1: poly[j], p2: poly[j+1] });
+                edges.get(key).push({ cell: i, p1, p2 });
             }
         });
-
-        const voronoiFrag = document.createDocumentFragment();
-        const voronoiRegionFrag = document.createDocumentFragment();
-        const defsFrag = document.createDocumentFragment();
 
         planetsList.forEach((planet, i) => {
             const pathData = voronoi.renderCell(i);
@@ -468,7 +458,7 @@ async function initMap() {
             const clipPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
             clipPath.setAttribute('d', pathData);
             clip.appendChild(clipPath);
-            defsFrag.appendChild(clip);
+            defGroup.appendChild(clip);
 
             const bg = document.createElementNS('http://www.w3.org/2000/svg', 'path');
             bg.setAttribute('d', pathData);
@@ -481,7 +471,7 @@ async function initMap() {
                 bg.style.stroke = factionInfo.secondaryColor;
                 bg.style.strokeWidth = "1px"; 
             }
-            voronoiFrag.appendChild(bg);
+            voronoiLayer.appendChild(bg);
 
             // 2. Слой Регионов
             const regionCode = String(planet.region || "0").trim();
@@ -500,7 +490,7 @@ async function initMap() {
                 rBg.style.strokeWidth = "2.5px"; 
                 rBg.setAttribute('stroke-linejoin', 'round');
             }
-            voronoiRegionFrag.appendChild(rBg);
+            voronoiRegionLayer.appendChild(rBg);
 
             let borderPath = "";
             let innerPath = ""; 
@@ -510,7 +500,13 @@ async function initMap() {
                 for (let j = 0; j < poly.length - 1; j++) {
                     const p1 = poly[j];
                     const p2 = poly[j+1];
-                    const key = getEdgeKey(p1, p2);
+                    let pt1, pt2;
+                    if (p1[0] < p2[0] - 0.001 || (Math.abs(p1[0] - p2[0]) <= 0.001 && p1[1] < p2[1])) {
+                        pt1 = p1; pt2 = p2;
+                    } else {
+                        pt1 = p2; pt2 = p1;
+                    }
+                    const key = `${pt1[0].toFixed(2)},${pt1[1].toFixed(2)}-${pt2[0].toFixed(2)},${pt2[1].toFixed(2)}`;
                     
                     const edgeData = edges.get(key);
                     let isBorder = false;
@@ -538,7 +534,7 @@ async function initMap() {
                 innerBorder.style.stroke = factionInfo.secondaryColor;
                 innerBorder.style.fill = "none";
                 innerBorder.style.strokeWidth = "2.5"; 
-                voronoiFrag.appendChild(innerBorder);
+                voronoiLayer.appendChild(innerBorder);
             }
 
             if (borderPath) {
@@ -549,19 +545,14 @@ async function initMap() {
                 border.style.fill = "none";
                 border.setAttribute('clip-path', `url(#clip-cell-${i})`);
                 border.style.strokeWidth = "3"; 
-                voronoiFrag.appendChild(border);
+                voronoiLayer.appendChild(border);
             }
         });
 
-        defGroup.appendChild(defsFrag);
-        voronoiLayer.appendChild(voronoiFrag);
-        voronoiRegionLayer.appendChild(voronoiRegionFrag);
-
-        const connectionsFrag = document.createDocumentFragment();
         globalConnections.forEach(conn => {
             const p1 = planetMap[conn.from];
             const p2 = planetMap[conn.to];
-            const routeType = conn.type || Object.values(conn)[2]; 
+            const routeType = Object.values(conn)[2]; 
             
             if (p1 && p2) {
                 const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
@@ -579,12 +570,10 @@ async function initMap() {
                 else if (routeType === 'B') routeColor = '#3498db'; 
                 
                 line.style.stroke = routeColor;
-                connectionsFrag.appendChild(line);
+                connectionsLayer.appendChild(line);
             }
         });
-        connectionsLayer.appendChild(connectionsFrag);
 
-        const planetsFrag = document.createDocumentFragment();
         planetsList.forEach(planet => {
             const absX = (planet.x / 100) * MAP_SIZE;
             const absY = (planet.y / 100) * MAP_SIZE;
@@ -598,7 +587,7 @@ async function initMap() {
             const hoverRing = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
             hoverRing.setAttribute('cx', absX);
             hoverRing.setAttribute('cy', absY);
-            hoverRing.setAttribute('r', '5');
+            hoverRing.setAttribute('r', 5);
             hoverRing.setAttribute('fill', 'none');
             hoverRing.setAttribute('stroke', '#ffcc00');
             hoverRing.setAttribute('stroke-width', '1');
@@ -611,7 +600,7 @@ async function initMap() {
             const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
             circle.setAttribute('cx', absX);
             circle.setAttribute('cy', absY);
-            circle.setAttribute('r', '2.75'); 
+            circle.setAttribute('r', 2.75); 
             circle.setAttribute('fill', color);
             circle.setAttribute('class', 'planet-circle');
             group.appendChild(circle);
@@ -628,7 +617,7 @@ async function initMap() {
             textBg.setAttribute('y', absY + 3.5);
             textBg.setAttribute('width', rectWidth);
             textBg.setAttribute('height', rectHeight);
-            textBg.setAttribute('rx', '0.75');
+            textBg.setAttribute('rx', 0.75);
             textBg.setAttribute('class', 'planet-label-bg');
             group.appendChild(textBg);
 
@@ -640,6 +629,7 @@ async function initMap() {
             text.setAttribute('class', 'planet-label');
             text.style.setProperty('--faction-color', color);
             
+            // Цвет текста для региона
             const rCode = String(planet.region || "0").trim();
             const rColorText = regionColors[rCode] || "#cccccc"; 
             text.style.setProperty('--region-color', rColorText);
@@ -648,17 +638,15 @@ async function initMap() {
 
             circle.addEventListener('mouseover', (e) => {
                 hoverRing.style.display = 'block';
-                if (hoverCoords) {
+                if(hoverCoords) {
                     hoverCoords.textContent = `X: ${planet.x} | Y: ${planet.y}`;
-                    hoverCoords.style.left = `${e.pageX + 15}px`;
-                    hoverCoords.style.top = `${e.pageY - 15}px`;
                     hoverCoords.style.display = 'block';
                 }
             });
 
             circle.addEventListener('mouseout', () => {
                 hoverRing.style.display = 'none';
-                if (hoverCoords) hoverCoords.style.display = 'none';
+                if(hoverCoords) hoverCoords.style.display = 'none';
             });
 
             circle.addEventListener('click', (e) => {
@@ -682,20 +670,14 @@ async function initMap() {
                         ttWiki.classList.add('disabled');
                     }
 
-                    tooltip.style.left = `${e.pageX + 15}px`;
-                    tooltip.style.top = `${e.pageY + 15}px`;
                     tooltip.style.display = 'block';
 
                     flyTo(absX, absY, scale);
                 }
             });
 
-            planetsFrag.appendChild(group);
+            planetsLayer.appendChild(group);
         });
-        planetsLayer.appendChild(planetsFrag);
-
-        const createdMasks = new Set();
-        const objectsFrag = document.createDocumentFragment();
 
         objectsData.forEach(obj => {
             if (!obj.id) return;
@@ -722,7 +704,7 @@ async function initMap() {
                 return; 
             }
 
-            if (!createdMasks.has(iconId) && !document.getElementById(iconId)) {
+            if (!document.getElementById(iconId)) {
                 const mask = document.createElementNS('http://www.w3.org/2000/svg', 'mask');
                 mask.setAttribute('id', iconId);
                 const img = document.createElementNS('http://www.w3.org/2000/svg', 'image');
@@ -733,7 +715,6 @@ async function initMap() {
                 img.setAttribute('y', '-5');
                 mask.appendChild(img);
                 defGroup.appendChild(mask);
-                createdMasks.add(iconId);
             }
 
             const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
@@ -743,9 +724,9 @@ async function initMap() {
             const pulse = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
             pulse.setAttribute('class', 'object-pulse');
             pulse.style.stroke = color;
-            pulse.setAttribute('cx', '0');
-            pulse.setAttribute('cy', '0');
-            pulse.setAttribute('r', '5'); 
+            pulse.setAttribute('cx', 0);
+            pulse.setAttribute('cy', 0);
+            pulse.setAttribute('r', 5); 
             group.appendChild(pulse);
 
             const iconRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
@@ -759,9 +740,9 @@ async function initMap() {
             group.appendChild(iconRect);
 
             const hitArea = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-            hitArea.setAttribute('cx', '0');
-            hitArea.setAttribute('cy', '0');
-            hitArea.setAttribute('r', '7');
+            hitArea.setAttribute('cx', 0);
+            hitArea.setAttribute('cy', 0);
+            hitArea.setAttribute('r', 7);
             hitArea.setAttribute('fill', 'transparent');
             group.appendChild(hitArea);
 
@@ -774,17 +755,17 @@ async function initMap() {
 
             const textBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
             textBg.setAttribute('x', -rectWidth / 2);
-            textBg.setAttribute('y', '6');
+            textBg.setAttribute('y', 6);
             textBg.setAttribute('width', rectWidth);
             textBg.setAttribute('height', rectHeight);
-            textBg.setAttribute('rx', '1.5');
+            textBg.setAttribute('rx', 1.5);
             textBg.setAttribute('class', 'planet-label-bg');
             group.appendChild(textBg);
 
             const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
             text.textContent = obj.name;
-            text.setAttribute('x', '0');
-            text.setAttribute('y', '9.5'); 
+            text.setAttribute('x', 0);
+            text.setAttribute('y', 9.5); 
             text.setAttribute('text-anchor', 'middle');
             text.setAttribute('class', 'planet-label');
             text.style.fill = color; 
@@ -793,16 +774,14 @@ async function initMap() {
             group.appendChild(text);
 
             group.addEventListener('mouseover', (e) => {
-                if (hoverCoords) {
+                if(hoverCoords) {
                     hoverCoords.textContent = `X: ${obj.x} | Y: ${obj.y}`;
-                    hoverCoords.style.left = `${e.pageX + 15}px`;
-                    hoverCoords.style.top = `${e.pageY - 15}px`;
                     hoverCoords.style.display = 'block';
                 }
             });
 
             group.addEventListener('mouseout', () => {
-                if (hoverCoords) hoverCoords.style.display = 'none';
+                if(hoverCoords) hoverCoords.style.display = 'none';
             });
 
             group.addEventListener('click', (e) => {
@@ -819,19 +798,16 @@ async function initMap() {
                     tooltip.style.borderColor = color; 
                     ttWiki.style.display = 'none'; 
 
-                    tooltip.style.left = `${e.pageX + 15}px`;
-                    tooltip.style.top = `${e.pageY + 15}px`;
                     tooltip.style.display = 'block';
 
                     flyTo(absX, absY, scale);
                 }
             });
 
-            objectsFrag.appendChild(group);
+            objectsLayer.appendChild(group);
         });
-        objectsLayer.appendChild(objectsFrag);
 
-        svg.addEventListener('click', () => { tooltip.style.display = 'none'; });
+        svg.addEventListener('click', () => tooltip.style.display = 'none');
         setupSearch();
 
         if (window.innerWidth <= 768) {
@@ -882,8 +858,6 @@ function setupSearch() {
         
         if (matches.length > 0) {
             resultsDiv.style.display = 'block';
-            const frag = document.createDocumentFragment();
-
             matches.forEach(match => {
                 const div = document.createElement('div');
                 div.className = 'search-item';
@@ -901,9 +875,8 @@ function setupSearch() {
                     const absY = (match.y / 100) * MAP_SIZE;
                     flyTo(absX, absY, 3);
                 };
-                frag.appendChild(div);
+                resultsDiv.appendChild(div);
             });
-            resultsDiv.appendChild(frag);
         } else {
             resultsDiv.style.display = 'none';
         }
